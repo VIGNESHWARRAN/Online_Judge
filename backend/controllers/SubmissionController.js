@@ -11,7 +11,7 @@ export const createSubmission = async (req, res) => {
   }
 };
 
-// READ ALL (optionally filter by user/problem via query params)
+// READ ALL
 export const getSubmissions = async (req, res) => {
   try {
     const filter = {};
@@ -46,7 +46,7 @@ export const updateSubmission = async (req, res) => {
   }
 };
 
-// DELETE (optional)
+
 export const deleteSubmission = async (req, res) => {
   try {
     const deleted = await Submission.findByIdAndDelete(req.params.id);

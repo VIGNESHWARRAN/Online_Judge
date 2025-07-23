@@ -3,6 +3,7 @@ import {
   addUser,
   readUsers,
   deleteUser,
+  updateUser,
 } from "../api/users";
 
 import {
@@ -13,7 +14,6 @@ import {
 } from "../api/problems";
 
 import { v4 as uuidv4 } from "uuid";
-import { encode } from "punycode";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
@@ -38,6 +38,7 @@ export default function AdminPage() {
     constraintLimit: 0,
   });
 
+  const [editUserId, setEditUserId] = useState(null);
   const [editProblemId, setEditProblemId] = useState(null);
 
   useEffect(() => {
@@ -55,22 +56,25 @@ export default function AdminPage() {
     }
   };
 
-  const handleAddUser = async () => {
-    if (!newUser.id || !newUser.name || !newUser.email || !newUser.type) {
-      return setError("Fill all user fields.");
-    }
+  const handleUserSave = async () => {
+    const { id, name, email, type } = newUser;
+    if (!id || !name || !email || !type) return setError("Fill all user fields.");
     try {
-      await addUser(newUser);
-      await fetchData();
+      if (editUserId) {
+        await updateUser(editUserId, newUser);
+      } else {
+        await addUser({ ...newUser });
+      }
       setNewUser({ id: "", name: "", email: "", type: "user" });
-      setError("");
-    } catch (err) {
-      setError("Error creating user.");
+      setEditUserId(null);
+      await fetchData();
+    } catch {
+      setError("Error saving user.");
     }
   };
 
   const handleProblemSave = async () => {
-    const { title, description, score, codeBase, testcase, constraintLimit } = newProblem;
+    const { id, title, description, score, codeBase, testcase, constraintLimit } = newProblem;
     if (!title || !description || !score || !codeBase || !testcase || !constraintLimit) {
       return setError("Fill all problem fields.");
     }
@@ -78,7 +82,8 @@ export default function AdminPage() {
       if (editProblemId) {
         await updateProblem(editProblemId, newProblem);
       } else {
-        await addProblem({ ...newProblem, id: uuidv4() });
+        const newId = uuidv4();
+        await addProblem({ ...newProblem, id: newId });
       }
       setNewProblem({ id: "", title: "", description: "", score: 0, codeBase: "", testcase: "", constraintLimit: 0 });
       setEditProblemId(null);
@@ -89,12 +94,19 @@ export default function AdminPage() {
     }
   };
 
+  const handleEditUser = (user) => {
+    setNewUser(user);
+    setEditUserId(user.id);
+  };
+
+  const handleEditProblem = (problem) => {
+    setNewProblem(problem);
+    setEditProblemId(problem.id);
+  };
+
   const handleDeleteUser = async (id) => {
     try {
-      
-      const encodeduserid = encodeURIComponent(id);
-      console.log(encodeduserid);
-      await deleteUser(encodeduserid);
+      await deleteUser(id);
       await fetchData();
     } catch (err) {
       setError("Error deleting user");
@@ -121,13 +133,18 @@ export default function AdminPage() {
           <option value="user">User</option>
           <option value="admin">Admin</option>
         </select>
-        <button onClick={handleAddUser} className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-white">Add User</button>
+        <button onClick={handleUserSave} className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-white">
+          {editUserId ? "Update User" : "Add User"}
+        </button>
       </div>
       <ul className="space-y-2">
         {users.map((user) => (
           <li key={user.id} className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center">
             <span>{user.name} ({user.email}) - {user.type}</span>
-            <button onClick={() => handleDeleteUser(user.id)} className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded">Delete</button>
+            <div className="space-x-2">
+              <button onClick={() => handleEditUser(user)} className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded">Edit</button>
+              <button onClick={() => handleDeleteUser(user.id)} className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded">Delete</button>
+            </div>
           </li>
         ))}
       </ul>
@@ -148,9 +165,12 @@ export default function AdminPage() {
       </div>
       <ul className="space-y-2">
         {problems.map((problem) => (
-          <li key={problem._id} className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center">
+          <li key={problem.id} className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center">
             <span><strong>{problem.title}</strong> — Score: {problem.score} | Limit: {problem.constraintLimit}</span>
-            <button onClick={() => handleDeleteProblem(problem._id)} className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded">Delete</button>
+            <div className="space-x-2">
+              <button onClick={() => handleEditProblem(problem)} className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded">Edit</button>
+              <button onClick={() => handleDeleteProblem(problem.id)} className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded">Delete</button>
+            </div>
           </li>
         ))}
       </ul>

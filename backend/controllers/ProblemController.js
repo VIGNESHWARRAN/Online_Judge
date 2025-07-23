@@ -1,6 +1,6 @@
 import Problem from '../models/problem.js';
 
-// CREATE
+// ✅ CREATE Problem
 export const createProblem = async (req, res) => {
   try {
     const problem = new Problem(req.body);
@@ -11,7 +11,7 @@ export const createProblem = async (req, res) => {
   }
 };
 
-// READ ALL
+// ✅ READ ALL Problems
 export const getProblems = async (req, res) => {
   try {
     const problems = await Problem.find();
@@ -21,34 +21,39 @@ export const getProblems = async (req, res) => {
   }
 };
 
-// READ ONE
+// ✅ READ ONE by Custom `id` Field
 export const getProblemById = async (req, res) => {
   try {
-    const problem = await Problem.findById(req.params.id);
-    if (!problem) return res.status(404).json({ error: "Not found" });
+    const problem = await Problem.findOne({ id: req.params.id }); // 🔄 Changed from findById
+    if (!problem) return res.status(404).json({ error: "Problem not found" });
     res.json(problem);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// UPDATE
+// ✅ UPDATE Problem by Custom `id`
 export const updateProblem = async (req, res) => {
   try {
-    const updated = await Problem.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) return res.status(404).json({ error: "Not found" });
+    const updated = await Problem.findOneAndUpdate(
+      { id: req.params.id },       // 🔄 Match by custom field 'id'
+      req.body,
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ error: "Problem not found" });
     res.json(updated);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-// DELETE
+// ✅ DELETE Problem by Custom `id`
 export const deleteProblem = async (req, res) => {
   try {
-    const deleted = await Problem.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: "Not found" });
-    res.json({ message: "Deleted successfully" });
+    const deleted = await Problem.findOneAndDelete({ id: req.params.id }); // 🔄 Match by custom 'id'
+    if (!deleted) return res.status(404).json({ error: "Problem not found" });
+    res.json({ message: "Problem deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
