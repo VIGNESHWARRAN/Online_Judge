@@ -1,19 +1,22 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const { v4: uuid } = require('uuid');
 
 const dirCodes = path.join(__dirname, 'codes');
 
-if (!fs.existsSync(dirCodes)) {
-    fs.mkdirSync(dirCodes, { recursive: true });
-}
-
 const generateFile = async (format, content) => {
     const jobID = uuid();
     const filename = `${jobID}.${format}`;
     const filePath = path.join(dirCodes, filename);
-    await fs.writeFileSync(filePath, content);
-    return filePath;
+
+    try {
+        await fs.mkdir(dirCodes, { recursive: true }); // ensures folder exists
+        await fs.writeFile(filePath, content);          // async write
+        return filePath;
+    } catch (err) {
+        console.error("Error writing file:", err);
+        throw err;
+    }
 };
 
 module.exports = {

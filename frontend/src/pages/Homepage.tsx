@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuthHandler } from "../api/authuser";
 
 function HomePage() {
@@ -11,20 +10,6 @@ function HomePage() {
     isLoading,
     type,
   } = useAuthHandler();
-
-  const navigate = useNavigate();
-  React.useEffect(() => {
-    
-    if (!isLoading && isAuthenticated) {
-      console.log(type);
-      if (type === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/editor");
-      }
-    }
-  }, [isLoading, isAuthenticated, type, navigate]);
-
 
   if (isLoading) {
     return <div className="text-white p-6">Loading...</div>;

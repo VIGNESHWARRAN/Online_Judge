@@ -1,7 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 export function useAuthHandler() {
   const {
     isLoading,
@@ -26,7 +25,7 @@ export function useAuthHandler() {
       if (!isAuthenticated || !user) return;
 
       const userData = {
-        id: user.sub,                   // ✅ full Auth0 ID (do NOT encode)
+        id: user.sub,                  
         name: user.name,
         email: user.email,
         type: "user", // default
@@ -45,7 +44,6 @@ export function useAuthHandler() {
           } else if (existingUser.type === "user") {
             navigate("/editor");
           }
-          console.log("✅ User found in DB:", existingUser);
         } else {
           const createRes = await fetch("http://localhost:5174/api/users", {
             method: "POST",
@@ -56,8 +54,6 @@ export function useAuthHandler() {
             const createdUser = await createRes.json();
             setType(createdUser.type);
             setDbUser(createdUser);
-            
-            console.log("✅ User created:", createdUser);
           } else {
             const errorText = await createRes.text();
             throw new Error(`User creation failed: ${errorText}`);
@@ -70,8 +66,6 @@ export function useAuthHandler() {
 
     fetchUserFromDB();
   }, [isAuthenticated, user]);
-
-
   return {
     isLoading,
     isAuthenticated,
@@ -80,7 +74,7 @@ export function useAuthHandler() {
     signup,
     logout,
     user,
-    type,     // dynamically determined from backend
+    type,   
     dbUser,
   }
 }

@@ -1,4 +1,16 @@
+import { submit } from "../api/compiler";
+import { useState } from "react";
 export default function CodeEditorPage() {
+  const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("py");
+  const [output, setOutput] = useState("");
+  async function callsubmit() {
+    const result = await submit(language, code);
+    console.log(result);
+if (result && result.output) {
+  setOutput(result.output);  // Clean access
+}
+  }
   return (
     <div className="flex h-screen bg-gradient-to-br from-[#1e1e2f] to-[#2a2a3d] text-white font-sans">
       {/* Left Section */}
@@ -19,8 +31,13 @@ export default function CodeEditorPage() {
             <option value="question11">Question 11: 10 points</option>
           </select>
 
-          <select id="languageSelector" className="px-4 py-2 rounded bg-gray-700 text-white text-sm">
-            <option value="python3">Python</option>
+          <select
+            id="languageSelector"
+            className="px-4 py-2 rounded bg-gray-700 text-white text-sm"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+          >
+            <option value="py">Python</option>
             <option value="java">Java</option>
           </select>
 
@@ -34,9 +51,11 @@ export default function CodeEditorPage() {
           <pre id="codeDisplay" className="bg-[#1a1a26] p-2 rounded whitespace-pre-wrap" />
         </div>
 
-        <div id="outputBox" className="bg-[#1a1a26] text-gray-200 p-4 rounded-lg shadow mb-4">
-          <strong>Output will be displayed here.</strong>
+        <div id="outputBox" className="bg-[#1a1a26] text-gray-200 p-4 rounded-lg shadow mb-4 whitespace-pre-wrap">
+          <strong>Output:</strong>
+          <pre>{output}</pre>
         </div>
+
 
         <div className="bg-[#232334] p-4 rounded-lg shadow">
           <label htmlFor="userInput" className="block font-bold mb-2">
@@ -65,7 +84,10 @@ export default function CodeEditorPage() {
             <button id="runButton" className="px-4 py-2 bg-blue-600 hover:bg-blue-800 rounded text-white">
               Run
             </button>
-            <button id="submitButton" className="px-4 py-2 bg-blue-600 hover:bg-blue-800 rounded text-white">
+            <button
+              id="submitButton"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-800 rounded text-white"
+              onClick={callsubmit}>
               Submit
             </button>
           </div>
@@ -74,9 +96,13 @@ export default function CodeEditorPage() {
           </p>
         </div>
 
-        <div className="flex-1 min-h-[300px] flex flex-col">
-          <div id="editor" className="flex-1 h-full border rounded bg-[#1a1a26]" />
-        </div>
+        <textarea
+          id="codeEditor"
+          className="flex-1 h-full bg-[#1a1a26] text-white text-sm p-2 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Write your code here..."
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+        />
       </div>
     </div>
   );

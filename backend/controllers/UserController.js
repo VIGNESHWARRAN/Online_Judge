@@ -1,6 +1,6 @@
 import User from '../models/user.js';
 
-// ✅ CREATE
+// CREATE
 export const createUser = async (req, res) => {
   try {
     const user = new User(req.body);
@@ -11,7 +11,7 @@ export const createUser = async (req, res) => {
   }
 };
 
-// ✅ READ ALL USERS
+// READ ALL USERS
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -21,10 +21,10 @@ export const getUsers = async (req, res) => {
   }
 };
 
-// ✅ READ ONE USER BY CUSTOM ID (e.g. Auth0 ID)
+// READ ONE USER BY CUSTOM ID (e.g. Auth0 ID)
 export const getUserById = async (req, res) => {
   try {
-    const user = await User.findOne({ id: req.params.id }); // ✅ using custom 'id'
+    const user = await User.findOne({ id: req.params.id });
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (error) {
@@ -32,13 +32,13 @@ export const getUserById = async (req, res) => {
   }
 };
 
-// ✅ UPDATE USER BY CUSTOM ID
+// UPDATE USER BY CUSTOM ID
 export const updateUser = async (req, res) => {
   try {
     const updated = await User.findOneAndUpdate(
-      { id: req.params.id },            // ✅ match by 'id'
+      { id: req.params.id },       
       req.body,
-      { new: true }                     // return updated document
+      { new: true }                 
     );
 
     if (!updated) return res.status(404).json({ error: 'User not found' });
@@ -48,10 +48,10 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// ✅ DELETE USER BY CUSTOM ID
+// DELETE USER BY CUSTOM ID
 export const deleteUser = async (req, res) => {
   try {
-    const deleted = await User.findOneAndDelete({ id: req.params.id }); // ✅ correct way
+    const deleted = await User.findOneAndDelete({ id: req.params.id }); 
     if (!deleted) return res.status(404).json({ error: 'User not found' });
     res.json({ message: 'User deleted successfully' });
   } catch (error) {

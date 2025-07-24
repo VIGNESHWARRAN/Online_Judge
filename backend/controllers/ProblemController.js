@@ -1,6 +1,6 @@
 import Problem from '../models/problem.js';
 
-// ✅ CREATE Problem
+// CREATE Problem
 export const createProblem = async (req, res) => {
   try {
     const problem = new Problem(req.body);
@@ -11,7 +11,7 @@ export const createProblem = async (req, res) => {
   }
 };
 
-// ✅ READ ALL Problems
+// READ ALL Problems
 export const getProblems = async (req, res) => {
   try {
     const problems = await Problem.find();
@@ -21,7 +21,7 @@ export const getProblems = async (req, res) => {
   }
 };
 
-// ✅ READ ONE by Custom `id` Field
+// READ ONE by Custom `id` Field
 export const getProblemById = async (req, res) => {
   try {
     const problem = await Problem.findOne({ id: req.params.id }); // 🔄 Changed from findById
@@ -32,11 +32,11 @@ export const getProblemById = async (req, res) => {
   }
 };
 
-// ✅ UPDATE Problem by Custom `id`
+// UPDATE Problem by Custom `id`
 export const updateProblem = async (req, res) => {
   try {
     const updated = await Problem.findOneAndUpdate(
-      { id: req.params.id },       // 🔄 Match by custom field 'id'
+      { id: req.params.id },   
       req.body,
       { new: true }
     );
@@ -48,10 +48,10 @@ export const updateProblem = async (req, res) => {
   }
 };
 
-// ✅ DELETE Problem by Custom `id`
+// DELETE Problem by Custom `id`
 export const deleteProblem = async (req, res) => {
   try {
-    const deleted = await Problem.findOneAndDelete({ id: req.params.id }); // 🔄 Match by custom 'id'
+    const deleted = await Problem.findOneAndDelete({ id: req.params.id });
     if (!deleted) return res.status(404).json({ error: "Problem not found" });
     res.json({ message: "Problem deleted successfully" });
   } catch (error) {

@@ -13,12 +13,6 @@ const executeJava = async (jobId, code) => {
   const outPath = path.join(outputPath, `${jobId}.out`);
   let timedOut = false;
 
-  // 🔁 Replace placeholder class name with valid one if needed
-  const classCode = code.replace(/public\s+class\s+\w+/, `public class ${jobId}`);
-
-  // ⏳ Write code to Java file
-  fs.writeFileSync(filePath, classCode);
-
   return new Promise((resolve) => {
     const compile = spawn('javac', [filePath]);
 
