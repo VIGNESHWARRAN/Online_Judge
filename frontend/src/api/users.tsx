@@ -23,13 +23,10 @@ export function readUser(userId) {
 
 // READ all users
 export function readUsers() {
-    return fetch(API_BASE)
+    return fetch(API_BASE, {credentials: "include"})
         .then((res) => {
             if (res.ok) return res.json();
             throw new Error("Failed to fetch users");
-        })
-        .catch((err) => {
-            console.error("Error fetching all users:", err);
         });
 }
 
@@ -38,6 +35,7 @@ export function updateUser(userId, updatedData) {
     return fetch(`${API_BASE}/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(updatedData),
     })
         .then((res) => {
@@ -53,6 +51,7 @@ export function updateUser(userId, updatedData) {
 export function deleteUser(userId) {
     return fetch(`${API_BASE}/${userId}`, {
         method: "DELETE",
+        credentials: "include",
     })
         .then((res) => {
             if (res.ok) return res.json();

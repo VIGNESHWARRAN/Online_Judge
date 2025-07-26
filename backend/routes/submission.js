@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/', submissionController.createSubmission); //create submission
 
-router.get('/', submissionController.getSubmissions); //get submission
+router.get('/',submissionController.getSubmissions); //get submission
 
 router.get('/:id', submissionController.getSubmissionById); //get by submission id
 

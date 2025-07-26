@@ -18,7 +18,7 @@ export function addProblem(problemData) {
 
 // Get a single problem by ID
 export function readProblem(problemId) {
-    return fetch(`${API_BASE}/${problemId}`)
+    return fetch(`${API_BASE}/${problemId}`, {credentials: "include",})
         .then((res) => {
             if (!res.ok) throw new Error("Problem not found");
             return res.json();
@@ -30,7 +30,7 @@ export function readProblem(problemId) {
 
 //Get all problems
 export function readProblems() {
-    return fetch(API_BASE)
+    return fetch(API_BASE, {credentials: "include",})
         .then((res) => {
             if (!res.ok) throw new Error("Failed to fetch problems");
             return res.json();
@@ -45,6 +45,7 @@ export function updateProblem(problemId, updatedData) {
     return fetch(`${API_BASE}/${problemId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(updatedData),
     })
         .then((res) => {
@@ -60,6 +61,7 @@ export function updateProblem(problemId, updatedData) {
 export function deleteProblem(problemId) {
     return fetch(`${API_BASE}/${problemId}`, {
         method: "DELETE",
+        credentials: "include",
     })
         .then((res) => {
             if (!res.ok) throw new Error("Failed to delete problem");

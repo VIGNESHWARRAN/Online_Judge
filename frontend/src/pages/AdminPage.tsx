@@ -81,8 +81,7 @@ export default function AdminPage() {
       !score ||
       !codeBase ||
       !constraintLimit ||
-      !testcases.length ||
-      testcases.some(tc => !tc.input || !tc.output)
+      !testcases.length
     ) {
       return setError("Fill all problem and testcase fields.");
     }

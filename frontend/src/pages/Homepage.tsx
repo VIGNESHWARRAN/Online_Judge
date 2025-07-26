@@ -1,6 +1,5 @@
-import React from "react";
-import { useAuthHandler } from "../api/authuser";
-
+import React, {useContext} from "react";
+import { AuthContext } from "../api/authuser";
 function HomePage() {
   const {
     isAuthenticated,
@@ -9,7 +8,7 @@ function HomePage() {
     signup,
     isLoading,
     type,
-  } = useAuthHandler();
+  } = useContext(AuthContext);
 
   if (isLoading) {
     return <div className="text-white p-6">Loading...</div>;

@@ -3,15 +3,16 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import router from './routes/router.js';
 import DBConnection from './database.js';
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
 const port = process.env.PORT;
 const app = express();
+app.use(cookieParser());
 
-// CORS setup with credentials support
 app.use(cors({
-  origin: 'http://localhost:5173', // frontend origin
+  origin: 'http://localhost:5173',
   credentials: true
 }));
 
