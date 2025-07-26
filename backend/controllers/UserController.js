@@ -58,3 +58,6 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+export const logoutUser = (req, res) => {
+  res.json({ message: 'Logged out successfully' });
+};

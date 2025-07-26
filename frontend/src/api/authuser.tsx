@@ -9,6 +9,7 @@ export function useAuthHandler() {
     loginWithRedirect,
     logout: auth0Logout,
     user,
+    getAccessTokenSilently,
   } = useAuth0();
 
   const [type, setType] = useState<"admin" | "user" | null>(null);
@@ -23,7 +24,7 @@ export function useAuthHandler() {
   useEffect(() => {
     const fetchUserFromDB = async () => {
       if (!isAuthenticated || !user) return;
-
+      const token = await getAccessTokenSilently();
       const userData = {
         id: user.sub,                  
         name: user.name,

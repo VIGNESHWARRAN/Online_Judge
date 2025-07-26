@@ -1,4 +1,5 @@
-import { submit } from "../api/compiler";
+import Editor from "@monaco-editor/react";
+import { submit, run } from "../api/compiler";
 import { useState } from "react";
 export default function CodeEditorPage() {
   const [code, setCode] = useState("");
@@ -7,9 +8,22 @@ export default function CodeEditorPage() {
   async function callsubmit() {
     const result = await submit(language, code);
     console.log(result);
-if (result && result.output) {
-  setOutput(result.output);  // Clean access
-}
+    if (result.output) {
+      setOutput(result.output);  // Clean access
+    }
+    else{
+      setOutput(result.error);
+    }
+  }
+  async function callrun() {
+    const result = await run(language, code);
+    console.log(result);
+    if (result.output) {
+      setOutput(result.output);  // Clean access
+    }
+    else{
+      setOutput(result.error);
+    }
   }
   return (
     <div className="flex h-screen bg-gradient-to-br from-[#1e1e2f] to-[#2a2a3d] text-white font-sans">
@@ -81,7 +95,10 @@ if (result && result.output) {
       <div className="w-1/2 flex flex-col p-4">
         <div className="flex justify-between items-center mb-4">
           <div className="flex space-x-4">
-            <button id="runButton" className="px-4 py-2 bg-blue-600 hover:bg-blue-800 rounded text-white">
+            <button 
+            id="runButton" 
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-800 rounded text-white"
+            onClick={callrun}>
               Run
             </button>
             <button
@@ -96,12 +113,17 @@ if (result && result.output) {
           </p>
         </div>
 
-        <textarea
-          id="codeEditor"
-          className="flex-1 h-full bg-[#1a1a26] text-white text-sm p-2 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Write your code here..."
+        <Editor
+          height="100%"
+          language={language === "py" ? "python" : language}
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(value) => setCode(value || "")}
+          theme="vs-dark"
+          options={{
+            fontSize: 14,
+            minimap: { enabled: false },
+            padding: { top: 10 },
+          }}
         />
       </div>
     </div>

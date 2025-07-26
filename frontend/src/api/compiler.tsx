@@ -26,7 +26,7 @@ export function run(lang, code) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      language: lang,
+      format: lang,
       code: code,
     }),
   })

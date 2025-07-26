@@ -1,50 +1,100 @@
 import express from "express";
-import cors from "cors"
+import cors from "cors";
+import axios from "axios"
 import { generateFile } from "./generateFile.js";
 import { executePy } from "./executePy.js";
+import { writeFile } from "fs/promises";
 
 const compiler = express();
 compiler.use(cors());
-compiler.use(express.urlencoded({extended: true}));
+compiler.use(express.urlencoded({ extended: true }));
 compiler.use(express.json());
 
 compiler.post("/submit", async (req, res) => {
-  const { format , code } = req.body;
-  if (code == undefined) {
-    return res.status(404).json({ success: false, error: "Empty code" });
+  const { format, code } = req.body;
+
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      error: "",
+    });
   }
 
   try {
     const filePath = await generateFile(format, code);
-    const output = await executePy(filePath);
-    return res.json(output);
+    const result = await executePy(filePath);
+    await axios.post("http://localhost:5174/api/submissions", {
+      problem: "64e4d0bfc392c2a8f89e4f3b",
+      user: "64e4d0bfc392c2a8f89e4f3b",
+      result: "Accepted",
+      time: result.time || null,
+      memory: result.memory || null,
+    });
+    if (result.error) {
+      return res.json({
+        success: false,
+        error: result.error,
+        detail: result.detail || "",
+      });
+    }
+
+    return res.json({
+      success: true,
+      output: result.output,
+    });
+
   } catch (error) {
-   console.error("Error occurred:", error);
-res.status(500).json({ error: error.message || "Unknown error" });
+    console.error("Error in /submit:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      detail: error.message || "Unknown error",
+    });
   }
 });
 
+compiler.post("/run", async (req, res) => {
+  const { format, code } = req.body;
 
-compiler.post("/run",async (req,res) => {
-    const {language = "Python", code } = req.body;
-    if(code == undefined){
-        return res.status(404).json({success: false, error: 'Empty code'});
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      error: "",
+    });
+  }
+
+  try {
+    const filePath = "./codes/run.py";
+    await writeFile(filePath, code);
+    const result = await executePy(filePath);
+
+    if (result.error) {
+      return res.json({
+        success: false,
+        error: result.error,
+        detail: result.detail || "",
+      });
     }
-    try{
-        const filePath = generateFile(language, code);
-        const output = await executePy(filePath);
-        return res.json({output});
-    }
-    catch(error){
-        res.status(500).json({error:error});
-    }
+
+    return res.json({
+      success: true,
+      output: result.output,
+    });
+
+  } catch (error) {
+    console.error("Error in /run:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
+      detail: error.message || "Unknown error",
+    });
+  }
 });
 
-
 compiler.listen(5175, (error) => {
-    if(error){
-        console.log("Error while running the server!");
-    } else {
-        console.log("Server started on port: 5175");
-    }
-})
+  if (error) {
+    console.error("Error while starting the server:", error);
+  } else {
+    console.log("✅ Server started on port 5175");
+  }
+});

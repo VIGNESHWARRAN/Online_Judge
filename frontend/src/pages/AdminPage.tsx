@@ -34,7 +34,7 @@ export default function AdminPage() {
     description: "",
     score: 0,
     codeBase: "",
-    testcase: "",
+    testcases: [{ input: "", output: "" }],
     constraintLimit: 0,
   });
 
@@ -74,10 +74,19 @@ export default function AdminPage() {
   };
 
   const handleProblemSave = async () => {
-    const { id, title, description, score, codeBase, testcase, constraintLimit } = newProblem;
-    if (!title || !description || !score || !codeBase || !testcase || !constraintLimit) {
-      return setError("Fill all problem fields.");
+    const { id, title, description, score, codeBase, testcases, constraintLimit } = newProblem;
+    if (
+      !title ||
+      !description ||
+      !score ||
+      !codeBase ||
+      !constraintLimit ||
+      !testcases.length ||
+      testcases.some(tc => !tc.input || !tc.output)
+    ) {
+      return setError("Fill all problem and testcase fields.");
     }
+
     try {
       if (editProblemId) {
         await updateProblem(editProblemId, newProblem);
@@ -85,7 +94,7 @@ export default function AdminPage() {
         const newId = uuidv4();
         await addProblem({ ...newProblem, id: newId });
       }
-      setNewProblem({ id: "", title: "", description: "", score: 0, codeBase: "", testcase: "", constraintLimit: 0 });
+      setNewProblem({ id: "", title: "", description: "", score: 0, codeBase: "", testcases: [{ input: "", output: "" }], constraintLimit: 0 });
       setEditProblemId(null);
       await fetchData();
       setError("");
@@ -155,21 +164,132 @@ export default function AdminPage() {
     <section>
       <h2 className="text-2xl font-semibold mb-4 text-white">📘 Manage Problems</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <input className="p-2 bg-zinc-900 text-white rounded" placeholder="Title" value={newProblem.title} onChange={(e) => setNewProblem({ ...newProblem, title: e.target.value })} />
-        <input className="p-2 bg-zinc-900 text-white rounded" placeholder="Description" value={newProblem.description} onChange={(e) => setNewProblem({ ...newProblem, description: e.target.value })} />
-        <input type="number" className="p-2 bg-zinc-900 text-white rounded" placeholder="Score" value={newProblem.score} onChange={(e) => setNewProblem({ ...newProblem, score: Number(e.target.value) })} />
-        <input className="p-2 bg-zinc-900 text-white rounded" placeholder="Code Base" value={newProblem.codeBase} onChange={(e) => setNewProblem({ ...newProblem, codeBase: e.target.value })} />
-        <input className="p-2 bg-zinc-900 text-white rounded" placeholder="Test Case" value={newProblem.testcase} onChange={(e) => setNewProblem({ ...newProblem, testcase: e.target.value })} />
-        <input type="number" className="p-2 bg-zinc-900 text-white rounded" placeholder="Constraint Limit" value={newProblem.constraintLimit} onChange={(e) => setNewProblem({ ...newProblem, constraintLimit: Number(e.target.value) })} />
-        <button onClick={handleProblemSave} className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white">{editProblemId ? "Update Problem" : "Add Problem"}</button>
+
+        <input
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="Title"
+          value={newProblem.title}
+          onChange={(e) => setNewProblem({ ...newProblem, title: e.target.value })}
+        />
+
+        <input
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="Description"
+          value={newProblem.description}
+          onChange={(e) => setNewProblem({ ...newProblem, description: e.target.value })}
+        />
+
+        <input
+          type="number"
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="Score"
+          value={newProblem.score}
+          onChange={(e) => setNewProblem({ ...newProblem, score: Number(e.target.value) })}
+        />
+
+        <input
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="Code Base"
+          value={newProblem.codeBase}
+          onChange={(e) => setNewProblem({ ...newProblem, codeBase: e.target.value })}
+        />
+
+        {/* Remove old single Test Case input */}
+
+        {/* Multiple Testcases inputs: input and output pairs */}
+        <div className="col-span-1 md:col-span-3">
+          <label className="block mb-2 font-semibold text-white">Testcases:</label>
+          {newProblem.testcases.map((tc, idx) => (
+            <div key={idx} className="flex gap-2 mb-2">
+              <input
+                className="p-2 bg-zinc-900 text-white rounded flex-1"
+                placeholder={`Input ${idx + 1}`}
+                value={tc.input}
+                onChange={(e) => {
+                  const testcases = [...newProblem.testcases];
+                  testcases[idx].input = e.target.value;
+                  setNewProblem({ ...newProblem, testcases });
+                }}
+              />
+              <input
+                className="p-2 bg-zinc-900 text-white rounded flex-1"
+                placeholder={`Output ${idx + 1}`}
+                value={tc.output}
+                onChange={(e) => {
+                  const testcases = [...newProblem.testcases];
+                  testcases[idx].output = e.target.value;
+                  setNewProblem({ ...newProblem, testcases });
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const testcases = newProblem.testcases.filter((_, i) => i !== idx);
+                  setNewProblem({
+                    ...newProblem,
+                    testcases: testcases.length ? testcases : [{ input: "", output: "" }],
+                  });
+                }}
+                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+                disabled={newProblem.testcases.length === 1}
+                title="Remove this testcase"
+              >
+                -
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white"
+            onClick={() =>
+              setNewProblem({
+                ...newProblem,
+                testcases: [...newProblem.testcases, { input: "", output: "" }],
+              })
+            }
+          >
+            + Add Testcase
+          </button>
+        </div>
+
+        <input
+          type="number"
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="Constraint Limit"
+          value={newProblem.constraintLimit}
+          onChange={(e) => setNewProblem({ ...newProblem, constraintLimit: Number(e.target.value) })}
+        />
+
+        <button
+          onClick={handleProblemSave}
+          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white col-span-1 md:col-span-3"
+        >
+          {editProblemId ? "Update Problem" : "Add Problem"}
+        </button>
       </div>
+
       <ul className="space-y-2">
         {problems.map((problem) => (
-          <li key={problem.id} className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center">
-            <span><strong>{problem.title}</strong> — Score: {problem.score} | Limit: {problem.constraintLimit}</span>
+          <li
+            key={problem.id}
+            className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center"
+          >
+            <span>
+              <strong>{problem.title}</strong> — Score: {problem.score} | Limit: {problem.constraintLimit}
+            </span>
             <div className="space-x-2">
-              <button onClick={() => handleEditProblem(problem)} className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded">Edit</button>
-              <button onClick={() => handleDeleteProblem(problem.id)} className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded">Delete</button>
+              <button
+                onClick={() => handleEditProblem(problem)}
+                className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDeleteProblem(problem.id)}
+                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+              >
+                Delete
+              </button>
             </div>
           </li>
         ))}
