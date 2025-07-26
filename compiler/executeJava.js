@@ -1,64 +1,84 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { performance } = require('perf_hooks');
 
 const outputPath = path.join(__dirname, 'outputs');
 if (!fs.existsSync(outputPath)) {
   fs.mkdirSync(outputPath, { recursive: true });
 }
 
-const executeJava = async (jobId, code) => {
-  const fileName = `${jobId}.java`;
-  const filePath = path.join(outputPath, fileName);
-  const outPath = path.join(outputPath, `${jobId}.out`);
-  let timedOut = false;
+const executeJava = async (filepath, input = '', timeoutMs = 5000) => {
+  const jobID = path.basename(filepath).split('.')[0];
+  const outPath = path.join(outputPath, `${jobID}.out`);
 
   return new Promise((resolve) => {
-    const compile = spawn('javac', [filePath]);
+    const startTime = performance.now();
+    let timedOut = false;
+    let output = '';
+    let errorOutput = '';
 
-    let compileError = '';
+    // Spawn Java process with source file path
+    const javaProcess = spawn('java', [filepath]);
 
-    compile.stderr.on('data', (data) => {
-      compileError += data.toString();
+    // Timeout to kill long-running process
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      javaProcess.kill();
+      fs.writeFileSync(outPath, 'Time Limit Exceeded');
+      resolve({ error: 'Time Limit Exceeded' });
+    }, timeoutMs);
+
+    // Write input if provided
+    if (input) {
+      javaProcess.stdin.write(input);
+    }
+    javaProcess.stdin.end();
+
+    javaProcess.stdout.on('data', (data) => {
+      output += data.toString();
     });
 
-    compile.on('close', (compileCode) => {
-      if (compileCode !== 0) {
-        fs.writeFileSync(outPath, `Java Compilation Error:\n${compileError.trim()}`);
-        return resolve({ error: "Java Compilation Failed", detail: compileError });
+    javaProcess.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
+    javaProcess.on('close', (code) => {
+      clearTimeout(timeout);
+
+      if (timedOut) {
+        return;
       }
 
-      const run = spawn('java', ['-cp', outputPath, jobId]); // ✅ specify output dir in cp
+      const endTime = performance.now();
+      const execTimeMs = +(endTime - startTime).toFixed(2);
 
-      let output = '';
-      let errorOutput = '';
+      const memUsageKB = process.memoryUsage().rss / 1024; // Approximate resident set size in KB
 
-      const timeout = setTimeout(() => {
-        timedOut = true;
-        run.kill();
-        fs.writeFileSync(outPath, "Time Limit Exceeded");
-        return resolve({ error: "Time Limit Exceeded" });
-      }, 5000);
+      if (code !== 0) {
+        fs.writeFileSync(outPath, `Java runtime error:\n${errorOutput.trim()}`);
+        resolve({
+          error: 'Java runtime error',
+          detail: errorOutput.trim(),
+          time: execTimeMs,
+          memory: memUsageKB,
+        });
+      } else {
+        fs.writeFileSync(outPath, output.trim());
+        resolve({
+          output: output.trim(),
+          time: execTimeMs,
+          memory: memUsageKB,
+        });
+      }
+    });
 
-      run.stdout.on('data', (data) => {
-        output += data.toString();
-      });
-
-      run.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-      });
-
-      run.on('close', (code) => {
-        clearTimeout(timeout);
-        if (timedOut) return;
-
-        if (code !== 0) {
-          fs.writeFileSync(outPath, `Java Error: ${errorOutput}`);
-          return resolve({ error: errorOutput });
-        } else {
-          fs.writeFileSync(outPath, output.trim());
-          return resolve({ output: output.trim() });
-        }
+    javaProcess.on('error', (err) => {
+      clearTimeout(timeout);
+      fs.writeFileSync(outPath, `Error executing Java process:\n${err.message}`);
+      resolve({
+        error: 'Error executing Java process',
+        detail: err.message,
       });
     });
   });

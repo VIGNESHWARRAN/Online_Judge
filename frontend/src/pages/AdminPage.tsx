@@ -80,8 +80,7 @@ export default function AdminPage() {
       !description ||
       !score ||
       !codeBase ||
-      !constraintLimit ||
-      !testcases.length
+      !constraintLimit
     ) {
       return setError("Fill all problem and testcase fields.");
     }

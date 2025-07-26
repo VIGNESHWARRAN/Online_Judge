@@ -1,6 +1,5 @@
-
-
-export function submit(lang, code) {
+// Submit a solution with optional problemId, userId, and input for test case inputs
+export function submit(lang, code, problemId, userId, input = '') {
   return fetch("http://localhost:5175/submit", {
     method: "POST",
     headers: {
@@ -9,6 +8,9 @@ export function submit(lang, code) {
     body: JSON.stringify({
       format: lang,
       code: code,
+      problemId: problemId,  // required: send problem id
+      userId: userId,        // required: send user id
+      input: input           // optional: input to be fed to code via stdin
     }),
   })
     .then((res) => res.json())
@@ -18,8 +20,8 @@ export function submit(lang, code) {
     });
 }
 
-
-export function run(lang, code) {
+// Run code with optional input (for code execution without submission)
+export function run(lang, code, input = '') {
   return fetch("http://localhost:5175/run", {
     method: "POST",
     headers: {
@@ -28,6 +30,7 @@ export function run(lang, code) {
     body: JSON.stringify({
       format: lang,
       code: code,
+      input: input,          // optional input string for the code running
     }),
   })
     .then((res) => res.json())

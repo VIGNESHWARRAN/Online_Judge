@@ -31,9 +31,11 @@ export function readSubmission(submissionId) {
 // Get all submissions
 export function readSubmissions() {
     return fetch(API_BASE)
-        .then((res) => {
+        .then(async (res) => {
             if (!res.ok) throw new Error("Failed to fetch submissions");
-            return res.json();
+            const data =  await res.json();
+            console.log(data);  // Log the parsed JSON data here
+            return data;
         })
         .catch((err) => {
             console.error("Error fetching submissions:", err);
