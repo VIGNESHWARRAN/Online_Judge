@@ -1,5 +1,5 @@
 // Submit a solution with optional problemId, userId, and input for test case inputs
-export function submit(lang, code, problemId, userId, input = '') {
+export function submit(lang, code, problemId, userId, userName, input = '') {
   return fetch("http://localhost:5175/submit", {
     method: "POST",
     headers: {
@@ -9,7 +9,8 @@ export function submit(lang, code, problemId, userId, input = '') {
       format: lang,
       code: code,
       problemId: problemId,  // required: send problem id
-      userId: userId,        // required: send user id
+      userId: userId, 
+      userName: userName,
       input: input           // optional: input to be fed to code via stdin
     }),
   })

@@ -34,7 +34,6 @@ export function readSubmissions() {
         .then(async (res) => {
             if (!res.ok) throw new Error("Failed to fetch submissions");
             const data =  await res.json();
-            console.log(data);  // Log the parsed JSON data here
             return data;
         })
         .catch((err) => {

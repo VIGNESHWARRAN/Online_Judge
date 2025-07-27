@@ -8,12 +8,12 @@ const problemSchema = new mongoose.Schema({
   codeBase: { type: String, required: true },
   testcases: [
     {
-      input: { type: String},
+      input: { type: String },
       output: { type: String, required: true }
     }
   ],
-  constraintLimit: { type: Number, required: true }
+  constraintLimit: { type: Number, required: true },
+  contestId: { type: mongoose.Schema.Types.ObjectId, ref: 'Contest', default: null }
 }, { timestamps: true });
-
 
 export default mongoose.model('Problem', problemSchema);

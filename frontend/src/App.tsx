@@ -7,32 +7,34 @@ import { AuthProvider } from "./api/authuser";
 
 function App() {
   return (
-    
     <BrowserRouter>
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route
-          path="/admin"
-          element={
-            <RequireAuth allowedTypes={["admin"]}>
-              <AdminPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/editor"
-          element={
-            <RequireAuth allowedTypes={["user", "admin"]}>
-              <CodeEditorPage />
-            </RequireAuth>
-          }
-        />
+      <AuthProvider>
+        <Routes>
+          {/* Public Route */}
+          <Route path="/" element={<HomePage />} />
 
-      </Routes>
-    </AuthProvider>
+          {/* Admin Protected Route */}
+          <Route
+            path="/admin"
+            element={
+              <RequireAuth allowedTypes={["admin"]}>
+                <AdminPage />
+              </RequireAuth>
+            }
+          />
+
+          {/* User and Admin Protected Route */}
+          <Route
+            path="/editor"
+            element={
+              <RequireAuth allowedTypes={["user", "admin"]}>
+                <CodeEditorPage />
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
-    
   );
 }
 

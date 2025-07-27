@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 import {
   addUser,
   readUsers,
@@ -13,21 +16,36 @@ import {
   updateProblem,
 } from "../api/problems";
 
+import {
+  addContest,
+  readContests,
+  deleteContest,
+  updateContest,
+} from "../api/contests"; // ensure this API module is implemented
+
 import { v4 as uuidv4 } from "uuid";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [problems, setProblems] = useState([]);
+  const [contests, setContests] = useState([]);
+
   const [error, setError] = useState("");
   const [view, setView] = useState("users");
 
+  // For filtering problems by contest/practice:
+  const [selectedContestId, setSelectedContestId] = useState("practice"); // 'practice' means no contest
+
+  // Users state
   const [newUser, setNewUser] = useState({
     id: "",
     name: "",
     email: "",
     type: "user",
   });
+  const [editUserId, setEditUserId] = useState(null);
 
+  // Problems state
   const [newProblem, setNewProblem] = useState({
     id: "",
     title: "",
@@ -36,29 +54,45 @@ export default function AdminPage() {
     codeBase: "",
     testcases: [{ input: "", output: "" }],
     constraintLimit: 0,
+    contestId: "", // empty means practice problem
   });
-
-  const [editUserId, setEditUserId] = useState(null);
   const [editProblemId, setEditProblemId] = useState(null);
 
+  // Contests state
+  const [newContest, setNewContest] = useState({
+    id: "",
+    name: "",
+    start: null, // Store as Date object
+    end: null,   // Store as Date object
+  });
+  const [editContestId, setEditContestId] = useState(null);
+
+  // Load initial data on mount
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
     try {
-      const usersData = await readUsers();
-      const problemsData = await readProblems();
+      const [usersData, problemsData, contestsData] = await Promise.all([
+        readUsers(),
+        readProblems(),
+        readContests(),
+      ]);
       setUsers(usersData || []);
       setProblems(problemsData || []);
+      setContests(contestsData || []);
+      setError("");
     } catch (err) {
       setError("Failed to load data");
     }
   };
 
+  // -------- User Handlers --------
   const handleUserSave = async () => {
     const { id, name, email, type } = newUser;
-    if (!id || !name || !email || !type) return setError("Fill all user fields.");
+    if (!id.trim() || !name.trim() || !email.trim() || !type.trim())
+      return setError("Fill all user fields.");
     try {
       if (editUserId) {
         await updateUser(editUserId, newUser);
@@ -68,23 +102,37 @@ export default function AdminPage() {
       setNewUser({ id: "", name: "", email: "", type: "user" });
       setEditUserId(null);
       await fetchData();
+      setError("");
     } catch {
       setError("Error saving user.");
     }
   };
+  const handleEditUser = (user) => {
+    setNewUser(user);
+    setEditUserId(user.id);
+  };
+  const handleDeleteUser = async (id) => {
+    try {
+      await deleteUser(id);
+      await fetchData();
+    } catch {
+      setError("Error deleting user");
+    }
+  };
 
+  // -------- Problem Handlers --------
   const handleProblemSave = async () => {
-    const { id, title, description, score, codeBase, testcases, constraintLimit } = newProblem;
+    const { title, description, score, codeBase, testcases, constraintLimit } =
+      newProblem;
     if (
-      !title ||
-      !description ||
+      !title.trim() ||
+      !description.trim() ||
       !score ||
-      !codeBase ||
+      !codeBase.trim() ||
       !constraintLimit
     ) {
       return setError("Fill all problem and testcase fields.");
     }
-
     try {
       if (editProblemId) {
         await updateProblem(editProblemId, newProblem);
@@ -92,7 +140,16 @@ export default function AdminPage() {
         const newId = uuidv4();
         await addProblem({ ...newProblem, id: newId });
       }
-      setNewProblem({ id: "", title: "", description: "", score: 0, codeBase: "", testcases: [{ input: "", output: "" }], constraintLimit: 0 });
+      setNewProblem({
+        id: "",
+        title: "",
+        description: "",
+        score: 0,
+        codeBase: "",
+        testcases: [{ input: "", output: "" }],
+        constraintLimit: 0,
+        contestId: "", // reset to practice on new problem form
+      });
       setEditProblemId(null);
       await fetchData();
       setError("");
@@ -100,57 +157,142 @@ export default function AdminPage() {
       setError("Error saving problem.");
     }
   };
-
-  const handleEditUser = (user) => {
-    setNewUser(user);
-    setEditUserId(user.id);
-  };
-
   const handleEditProblem = (problem) => {
     setNewProblem(problem);
     setEditProblemId(problem.id);
+    setSelectedContestId(problem.contestId || "practice");
   };
-
-  const handleDeleteUser = async (id) => {
-    try {
-      await deleteUser(id);
-      await fetchData();
-    } catch (err) {
-      setError("Error deleting user");
-    }
-  };
-
   const handleDeleteProblem = async (id) => {
     try {
       await deleteProblem(id);
       await fetchData();
-    } catch (err) {
+    } catch {
       setError("Error deleting problem");
     }
   };
+
+  // -------- Contest Handlers --------
+  const handleContestSave = async () => {
+    const { name, start, end } = newContest;
+
+    if (!name.trim() || !start || !end) {
+      return setError("Fill all contest fields.");
+    }
+
+    // Validate start < end
+    if (start >= end) {
+      return setError("Start date/time must be before end date/time.");
+    }
+
+    // Prepare contest object for saving: convert Dates to ISO strings
+    const contestToSave = {
+      ...newContest,
+      start: start.toISOString(),
+      end: end.toISOString(),
+    };
+
+    try {
+      if (editContestId) {
+        await updateContest(editContestId, contestToSave);
+      } else {
+        const newId = uuidv4();
+        await addContest({ ...contestToSave, id: newId });
+      }
+      setNewContest({ id: "", name: "", start: null, end: null });
+      setEditContestId(null);
+      await fetchData();
+      setError("");
+    } catch {
+      setError("Error saving contest.");
+    }
+  };
+  const handleEditContest = (contest) => {
+    setNewContest({
+      id: contest.id || contest._id || "",
+      name: contest.name || "",
+      start: contest.start ? new Date(contest.start) : null,
+      end: contest.end ? new Date(contest.end) : null,
+    });
+    setEditContestId(contest.id || contest._id);
+  };
+  const handleDeleteContest = async (id) => {
+    try {
+      await deleteContest(id);
+      if (selectedContestId === id) setSelectedContestId("practice");
+      await fetchData();
+    } catch {
+      setError("Error deleting contest");
+    }
+  };
+
+  // Filter problems by selected contest or practice
+  const filteredProblems = problems.filter((p) =>
+    selectedContestId === "practice"
+      ? !p.contestId || p.contestId === ""
+      : p.contestId === selectedContestId
+  );
+
+  // ----- Render Sections -----
 
   const renderUserSection = () => (
     <section className="mb-12">
       <h2 className="text-2xl font-semibold mb-4 text-white">👤 Manage Users</h2>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
-        <input className="p-2 bg-zinc-900 text-white rounded" placeholder="ID (auth0|...)" value={newUser.id} onChange={(e) => setNewUser({ ...newUser, id: e.target.value })} />
-        <input className="p-2 bg-zinc-900 text-white rounded" placeholder="Name" value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} />
-        <input className="p-2 bg-zinc-900 text-white rounded" placeholder="Email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} />
-        <select className="p-2 bg-zinc-900 text-white rounded" value={newUser.type} onChange={(e) => setNewUser({ ...newUser, type: e.target.value })}>
+        <input
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="ID (auth0|...)"
+          value={newUser.id}
+          onChange={(e) => setNewUser({ ...newUser, id: e.target.value })}
+        />
+        <input
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="Name"
+          value={newUser.name}
+          onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+        />
+        <input
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="Email"
+          value={newUser.email}
+          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+        />
+        <select
+          className="p-2 bg-zinc-900 text-white rounded"
+          value={newUser.type}
+          onChange={(e) => setNewUser({ ...newUser, type: e.target.value })}
+        >
           <option value="user">User</option>
           <option value="admin">Admin</option>
         </select>
-        <button onClick={handleUserSave} className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-white">
+        <button
+          onClick={handleUserSave}
+          className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded text-white"
+        >
           {editUserId ? "Update User" : "Add User"}
         </button>
       </div>
       <ul className="space-y-2">
         {users.map((user) => (
-          <li key={user.id} className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center">
-            <span>{user.name} ({user.email}) - {user.type}</span>
+          <li
+            key={user.id}
+            className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center"
+          >
+            <span>
+              {user.name} ({user.email}) - {user.type}
+            </span>
             <div className="space-x-2">
-              <button onClick={() => handleEditUser(user)} className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded">Edit</button>
-              <button onClick={() => handleDeleteUser(user.id)} className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded">Delete</button>
+              <button
+                onClick={() => handleEditUser(user)}
+                className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDeleteUser(user.id)}
+                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+              >
+                Delete
+              </button>
             </div>
           </li>
         ))}
@@ -161,22 +303,37 @@ export default function AdminPage() {
   const renderProblemSection = () => (
     <section>
       <h2 className="text-2xl font-semibold mb-4 text-white">📘 Manage Problems</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
 
+      {/* Contest selector */}
+      <div className="mb-4">
+        <label className="mr-2 text-white font-semibold">Select Contest:</label>
+        <select
+          className="p-2 bg-zinc-900 text-white rounded"
+          value={selectedContestId}
+          onChange={(e) => setSelectedContestId(e.target.value)}
+        >
+          <option value="practice">Practice (No Contest)</option>
+          {contests.map((contest) => (
+            <option key={contest.id || contest._id} value={contest.id || contest._id}>
+              {contest.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
         <input
           className="p-2 bg-zinc-900 text-white rounded"
           placeholder="Title"
           value={newProblem.title}
           onChange={(e) => setNewProblem({ ...newProblem, title: e.target.value })}
         />
-
         <input
           className="p-2 bg-zinc-900 text-white rounded"
           placeholder="Description"
           value={newProblem.description}
           onChange={(e) => setNewProblem({ ...newProblem, description: e.target.value })}
         />
-
         <input
           type="number"
           className="p-2 bg-zinc-900 text-white rounded"
@@ -185,16 +342,47 @@ export default function AdminPage() {
           onChange={(e) => setNewProblem({ ...newProblem, score: Number(e.target.value) })}
         />
 
-        <input
-          className="p-2 bg-zinc-900 text-white rounded"
-          placeholder="Code Base"
-          value={newProblem.codeBase}
-          onChange={(e) => setNewProblem({ ...newProblem, codeBase: e.target.value })}
-        />
+        <div className="col-span-1 md:col-span-3">
+          <label className="block mb-1 text-white">Code Base File:</label>
+          <input
+            type="file"
+            accept=".js,.py,.txt,.java,.cpp,.*"
+            className="p-2 bg-zinc-900 text-white rounded"
+            onChange={async (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const reader = new window.FileReader();
+              reader.onload = (ev) => {
+                setNewProblem((prev) => ({ ...prev, codeBase: ev.target.result || "" }));
+              };
+              reader.onerror = () => {
+                setError("Failed to read file.");
+              };
+              reader.readAsText(file);
+            }}
+          />
+          {newProblem.codeBase && (
+            <div className="text-xs mt-2 text-green-500">
+              File loaded, {newProblem.codeBase.length} characters
+            </div>
+          )}
+        </div>
 
-        {/* Remove old single Test Case input */}
+        {/* Select contest for problem */}
+        <select
+          className="p-2 bg-zinc-900 text-white rounded md:col-span-3"
+          value={newProblem.contestId || ""}
+          onChange={(e) => setNewProblem({ ...newProblem, contestId: e.target.value })}
+        >
+          <option value="">Practice (No Contest)</option>
+          {contests.map((contest) => (
+            <option key={contest.id || contest._id} value={contest.id || contest._id}>
+              {contest.name}
+            </option>
+          ))}
+        </select>
 
-        {/* Multiple Testcases inputs: input and output pairs */}
+        {/* Testcases input */}
         <div className="col-span-1 md:col-span-3">
           <label className="block mb-2 font-semibold text-white">Testcases:</label>
           {newProblem.testcases.map((tc, idx) => (
@@ -255,7 +443,9 @@ export default function AdminPage() {
           className="p-2 bg-zinc-900 text-white rounded"
           placeholder="Constraint Limit"
           value={newProblem.constraintLimit}
-          onChange={(e) => setNewProblem({ ...newProblem, constraintLimit: Number(e.target.value) })}
+          onChange={(e) =>
+            setNewProblem({ ...newProblem, constraintLimit: Number(e.target.value) })
+          }
         />
 
         <button
@@ -266,8 +456,9 @@ export default function AdminPage() {
         </button>
       </div>
 
+      {/* Problems list */}
       <ul className="space-y-2">
-        {problems.map((problem) => (
+        {filteredProblems.map((problem) => (
           <li
             key={problem.id}
             className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center"
@@ -295,15 +486,130 @@ export default function AdminPage() {
     </section>
   );
 
+  const renderContestSection = () => (
+    <section className="mb-12">
+      <h2 className="text-2xl font-semibold mb-4 text-white">🏆 Manage Contests</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
+        <input
+          className="p-2 bg-zinc-900 text-white rounded"
+          placeholder="Name"
+          value={newContest.name}
+          onChange={(e) => setNewContest({ ...newContest, name: e.target.value })}
+        />
+
+        <div>
+          <label className="block mb-1 text-white font-semibold">Start Date & Time</label>
+          <DatePicker
+            selected={newContest.start}
+            onChange={date => setNewContest(prev => ({ ...prev, start: date }))}
+            showTimeSelect
+            timeIntervals={15}
+            dateFormat="yyyy-MM-dd HH:mm"
+            className="p-2 bg-zinc-900 text-white rounded w-full"
+            placeholderText="Select start date & time"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 text-white font-semibold">End Date & Time</label>
+          <DatePicker
+            selected={newContest.end}
+            onChange={date => setNewContest(prev => ({ ...prev, end: date }))}
+            showTimeSelect
+            timeIntervals={15}
+            dateFormat="yyyy-MM-dd HH:mm"
+            className="p-2 bg-zinc-900 text-white rounded w-full"
+            placeholderText="Select end date & time"
+          />
+        </div>
+
+        <div></div>
+
+        <button
+          onClick={handleContestSave}
+          className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white"
+        >
+          {editContestId ? "Update Contest" : "Add Contest"}
+        </button>
+      </div>
+
+      <ul className="space-y-2">
+        {contests.map((contest) => (
+          <li
+            key={contest.id || contest._id}
+            className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center"
+          >
+            <span>
+              <strong>{contest.name}</strong> —{" "}
+              {new Date(contest.start).toLocaleString()} to{" "}
+              {new Date(contest.end).toLocaleString()}
+            </span>
+            <div className="space-x-2">
+              <button
+                onClick={() => handleEditContest(contest)}
+                className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDeleteContest(contest.id || contest._id)}
+                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+
   return (
     <div className="min-h-screen bg-black text-white p-10">
       <h1 className="text-4xl font-bold mb-8 text-center text-white">🛠 Admin Dashboard</h1>
+
+      {/* View tabs */}
       <div className="flex justify-center gap-6 mb-8">
-        <button onClick={() => setView("users")} className={`px-4 py-2 rounded ${view === "users" ? "bg-indigo-600" : "bg-zinc-800"}`}>Users</button>
-        <button onClick={() => setView("problems")} className={`px-4 py-2 rounded ${view === "problems" ? "bg-blue-600" : "bg-zinc-800"}`}>Problems</button>
+        <button
+          onClick={() => setView("users")}
+          className={`px-4 py-2 rounded ${
+            view === "users" ? "bg-indigo-600" : "bg-zinc-800"
+          }`}
+        >
+          Users
+        </button>
+        <button
+          onClick={() => setView("problems")}
+          className={`px-4 py-2 rounded ${
+            view === "problems" ? "bg-blue-600" : "bg-zinc-800"
+          }`}
+        >
+          Problems
+        </button>
+        <button
+          onClick={() => setView("contests")}
+          className={`px-4 py-2 rounded ${
+            view === "contests" ? "bg-green-600" : "bg-zinc-800"
+          }`}
+        >
+          Contests
+        </button>
       </div>
-      {error && <div className="bg-red-600 text-white p-3 mb-6 rounded text-center">{error}</div>}
-      {view === "users" ? renderUserSection() : renderProblemSection()}
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-600 text-white p-3 mb-6 rounded text-center">
+          {error}
+        </div>
+      )}
+
+      {/* Conditional rendering of sections */}
+      {view === "users"
+        ? renderUserSection()
+        : view === "problems"
+        ? renderProblemSection()
+        : renderContestSection()}
     </div>
   );
 }

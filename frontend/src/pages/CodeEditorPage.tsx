@@ -1,65 +1,60 @@
+import React, { useEffect, useState, useContext } from "react";
 import Editor from "@monaco-editor/react";
 import { submit, run } from "../api/compiler";
 import { readProblems } from "../api/problems";
-import { useState, useEffect } from "react";
-import Leaderboard from './Leaderboard';
+import { AuthContext } from "../api/authuser";
+import LeaderboardPage from "./Leaderboard";
+import ContestRegisterPage from "./ContestPage"; // Optional if you toggle contest register UI
 
 function diceCoefficient(str1, str2) {
   if (!str1.length || !str2.length) return 0;
-
-  const bigrams = (str) => {
-    const s = str.toLowerCase();
+  const bigrams = (s) => {
     const map = new Map();
     for (let i = 0; i < s.length - 1; i++) {
-      const bg = s.substring(i, i + 2);
+      const bg = s.substring(i, i + 2).toLowerCase();
       map.set(bg, (map.get(bg) || 0) + 1);
     }
     return map;
   };
-
-  const bigrams1 = bigrams(str1);
-  const bigrams2 = bigrams(str2);
-
+  const map1 = bigrams(str1);
+  const map2 = bigrams(str2);
   let intersection = 0;
-  for (const [bg, count] of bigrams1.entries()) {
-    if (bigrams2.has(bg)) {
-      intersection += Math.min(count, bigrams2.get(bg));
+  for (const [bg, count] of map1.entries()) {
+    if (map2.has(bg)) {
+      intersection += Math.min(count, map2.get(bg));
     }
   }
-
-  const totalBigrams = bigrams1.size + bigrams2.size;
-  return (2 * intersection) / totalBigrams;
+  return (2 * intersection) / (map1.size + map2.size);
 }
 
 export default function CodeEditorPage() {
-  const [code, setCode] = useState("");
-  const [language, setLanguage] = useState("py");
-  const [output, setOutput] = useState("");
-  const [input, setInput] = useState(""); // For program inputs
+  const { user } = useContext(AuthContext);
+  const userId = user.sub;
+  const userName = user.name;
 
   const [problems, setProblems] = useState([]);
   const [selectedProblemIndex, setSelectedProblemIndex] = useState(null);
+  const [code, setCode] = useState("");
+  const [language, setLanguage] = useState("py");
+  const [output, setOutput] = useState("");
+  const [input, setInput] = useState("");
 
   const [similarityScore, setSimilarityScore] = useState(0);
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
-
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showContestRegister, setShowContestRegister] = useState(false);
 
-  // Sample userId, replace with real user from auth/context
-  const userId = "auth0|687fce081ce1c4c3e85f4c4b";
-
-  // Load problems on mount
   useEffect(() => {
     async function fetchProblems() {
       try {
         const problemsData = await readProblems();
         setProblems(problemsData);
+
         if (problemsData.length > 0) {
           setSelectedProblemIndex(0);
           setCode(problemsData[0].codeBase || "");
           setSimilarityScore(100);
           setIsSubmitDisabled(false);
-          // Set language per problem extension if available? Here default "py"
           setLanguage("py");
           setInput("");
         } else {
@@ -73,15 +68,14 @@ export default function CodeEditorPage() {
     fetchProblems();
   }, []);
 
-  // Update code similarity and submit button disable state
   useEffect(() => {
-    if (selectedProblemIndex === null) {
+    if (selectedProblemIndex === null || !problems[selectedProblemIndex]) {
       setSimilarityScore(0);
       setIsSubmitDisabled(true);
       return;
     }
 
-    const problemCode = problems[selectedProblemIndex]?.codeBase || "";
+    const problemCode = problems[selectedProblemIndex].codeBase || "";
     const sim = diceCoefficient(problemCode, code);
     const simPercent = Math.round(sim * 100);
     setSimilarityScore(simPercent);
@@ -90,73 +84,71 @@ export default function CodeEditorPage() {
     setIsSubmitDisabled(simPercent < constraintLimit);
   }, [code, selectedProblemIndex, problems]);
 
-  // Handle problem change
+  // Handlers
   const handleProblemChange = (e) => {
     const idx = e.target.value;
-    if (idx !== "") {
-      const i = Number(idx);
-      setSelectedProblemIndex(i);
-      const selectedProblem = problems[i];
-      setCode(selectedProblem.codeBase || "");
-      // Set language per problem if you have that info, else fallback
-      setLanguage("py"); 
-      setOutput("");
-      setInput(""); // reset input
-    } else {
+    if (idx === "") {
       setSelectedProblemIndex(null);
       setCode("");
       setOutput("");
       setInput("");
       setSimilarityScore(0);
       setIsSubmitDisabled(true);
+      return;
     }
+    const i = Number(idx);
+    setSelectedProblemIndex(i);
+    const selectedProblem = problems[i];
+    setCode(selectedProblem.codeBase || "");
+    setSimilarityScore(100);
+    setIsSubmitDisabled(false);
+    setOutput("");
+    setInput("");
+    setLanguage("py");
   };
 
-  // Call submit API function with language mapping
   async function callsubmit() {
     if (selectedProblemIndex === null) {
       alert("Please select a problem before submitting.");
       return;
     }
     const problemId = problems[selectedProblemIndex].id;
-
     const langMapping = {
       py: "py",
       python: "py",
       java: "java",
       cpp: "cpp",
-      "c++": "cpp"
+      "c++": "cpp",
     };
-
     const lang = langMapping[language.toLowerCase()] || "py";
 
-    const result = await submit(lang, code, problemId, userId, input);
-    console.log(result);
-    if (result.output) {
-      setOutput(result.output);
-    } else {
-      setOutput(result.error || "Unknown error during submission");
+    try {
+      const result = await submit(lang, code, problemId, userId, userName, input);
+      setOutput(result.output || result.error || "Unknown error during submission");
+    } catch {
+      setOutput("Error during submission.");
     }
   }
 
-  // Call run API function with language mapping
   async function callrun() {
+    if (selectedProblemIndex === null) {
+      alert("Please select a problem before running.");
+      return;
+    }
     const langMapping = {
       py: "py",
       python: "py",
       java: "java",
       cpp: "cpp",
-      "c++": "cpp"
+      "c++": "cpp",
     };
-
     const lang = langMapping[language.toLowerCase()] || "py";
 
-    const result = await run(lang, code, input);
-    console.log(result);
-    if (result.output) {
-      setOutput(result.output);
-    } else {
-      setOutput(result.error || "Unknown error during run");
+    try {
+      const result = await run(lang, code, input);
+      setOutput(result.output || result.error || "Unknown error during run");
+    } catch {
+      setOutput("Error during run.");
     }
   }
 
@@ -164,12 +156,26 @@ export default function CodeEditorPage() {
     return (
       <>
         <button
-          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-800 text-white text-sm mb-4"
+          className="mb-4 px-4 py-2 rounded bg-blue-600 hover:bg-blue-800 text-white"
           onClick={() => setShowLeaderboard(false)}
         >
           Back to Editor
         </button>
-        <Leaderboard />
+        <LeaderboardPage />
+      </>
+    );
+  }
+
+  if (showContestRegister) {
+    return (
+      <>
+        <button
+          className="mb-4 px-4 py-2 rounded bg-blue-600 hover:bg-blue-800 text-white"
+          onClick={() => setShowContestRegister(false)}
+        >
+          Back to Editor
+        </button>
+        <ContestRegisterPage />
       </>
     );
   }
@@ -177,25 +183,27 @@ export default function CodeEditorPage() {
   return (
     <div className="flex h-screen bg-gradient-to-br from-[#1e1e2f] to-[#2a2a3d] text-white font-sans">
       {/* Left Section */}
-      <div className="w-1/2 flex flex-col p-4 relative">
-        <div className="flex justify-between mb-4">
+      <div className="w-1/2 flex flex-col p-6 overflow-y-auto">
+        <div className="flex justify-between items-center mb-5 space-x-4">
+          {/* Problem selector */}
           <select
             id="questionSelector"
-            className="px-4 py-2 rounded bg-gray-700 text-white text-sm"
+            className="flex-grow px-4 py-2 rounded bg-gray-800 text-white text-md focus:outline-none focus:ring-2 focus:ring-blue-600"
             value={selectedProblemIndex !== null ? selectedProblemIndex : ""}
             onChange={handleProblemChange}
           >
             <option value="">Select a Question</option>
             {problems.map((problem, idx) => (
               <option key={problem.id} value={idx}>
-                {`${problem.title}: ${problem.score} points`}
+                {`${problem.title} — ${problem.score} pts`}
               </option>
             ))}
           </select>
 
+          {/* Language selector */}
           <select
             id="languageSelector"
-            className="px-4 py-2 rounded bg-gray-700 text-white text-sm"
+            className="w-36 px-4 py-2 rounded bg-gray-800 text-white text-md focus:outline-none focus:ring-2 focus:ring-blue-600"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
           >
@@ -203,13 +211,15 @@ export default function CodeEditorPage() {
             <option value="java">Java</option>
             <option value="cpp">C++</option>
           </select>
+        </div>
 
+        <div className="flex space-x-4 mb-6">
           <button
             id="copyButton"
-            className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-800 text-white text-sm"
+            className="flex-grow px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold"
             onClick={() => {
               if (selectedProblemIndex !== null && problems[selectedProblemIndex]) {
-                navigator.clipboard.writeText(problems[selectedProblemIndex].codeBase || '');
+                navigator.clipboard.writeText(problems[selectedProblemIndex].codeBase || "");
                 alert("Problem's code base copied to clipboard!");
               } else {
                 alert("No problem selected or code base is empty.");
@@ -219,95 +229,102 @@ export default function CodeEditorPage() {
             Copy Code
           </button>
 
-          {/* Leaderboard button */}
           <button
-            className="px-4 py-2 rounded bg-green-600 hover:bg-green-800 text-white text-sm"
+            onClick={() => setShowContestRegister(true)}
+            className="px-4 py-2 rounded bg-teal-600 hover:bg-teal-700 text-white font-semibold"
+          >
+            Register for Contests
+          </button>
+
+          <button
+            className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-semibold"
             onClick={() => setShowLeaderboard(true)}
           >
             Leaderboard
           </button>
         </div>
 
-        <div
-          id="questionBox"
-          className="flex-1 bg-[#29293d] p-4 rounded-lg overflow-y-auto shadow mb-4"
-        >
-          {selectedProblemIndex !== null ? (
+        {/* Problem details */}
+        <section className="flex-1 bg-gray-800 rounded-lg p-6 shadow-lg overflow-y-auto">
+          {selectedProblemIndex !== null && problems[selectedProblemIndex] ? (
             <>
-              <h3 className="text-lg font-bold mb-2">
-                {problems[selectedProblemIndex].title}
-              </h3>
-              <p className="text-sm whitespace-pre-wrap">
-                {problems[selectedProblemIndex].description}
-              </p>
-              <h4 className="mt-4 mb-2 font-semibold">Constraints:</h4>
-              <p>{problems[selectedProblemIndex].constraintLimit}</p>
-              <h4 className="mt-4 mb-2 font-semibold">Test Cases:</h4>
-              <ul className="list-disc list-inside text-sm max-h-40 overflow-auto">
-                {problems[selectedProblemIndex].testcases.map((tc, idx) => (
-                  <li key={idx}>
-                    <strong>Test case</strong> {idx + 1} <br />
-                    <strong>Input:</strong> {tc.input} <br />
-                    <strong>Output:</strong> {tc.output}
-                  </li>
-                ))}
-              </ul>
+              <h2 className="text-2xl font-bold mb-4">{problems[selectedProblemIndex].title}</h2>
+              <p className="whitespace-pre-wrap text-md mb-8">{problems[selectedProblemIndex].description}</p>
+
+              <div>
+                <h3 className="font-semibold mb-2 text-lg border-b border-gray-700 pb-1">Constraints</h3>
+                <p className="mb-6">{problems[selectedProblemIndex].constraintLimit}</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2 text-lg border-b border-gray-700 pb-1">Test Cases</h3>
+                <ul className="list-disc list-inside max-h-56 overflow-y-auto space-y-3 text-sm">
+                  {problems[selectedProblemIndex].testcases.map((tc, idx) => (
+                    <li key={idx} className="bg-gray-700 p-3 rounded shadow-sm">
+                      <p>
+                        <span className="font-semibold">Input:</span> {tc.input}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Output:</span> {tc.output}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </>
           ) : (
-            <p>Select a question to see the details</p>
+            <p className="text-center text-gray-400 mt-20 select-none">Select a question to see details</p>
           )}
-        </div>
+        </section>
 
-        <div
-          id="outputBox"
-          className="bg-[#1a1a26] text-gray-200 p-4 rounded-lg shadow mb-4 whitespace-pre-wrap"
-        >
+        {/* Output box */}
+        <section className="mt-6 bg-gray-800 p-4 rounded-lg shadow-lg max-h-36 overflow-y-auto whitespace-pre-wrap font-mono text-sm">
           <strong>Output:</strong>
-          <pre>{output}</pre>
-        </div>
+          <div className="mt-2">{output || "No output yet."}</div>
+        </section>
 
-        {/* User Input textarea */}
-        <div className="bg-[#232334] p-4 rounded-lg shadow">
-          <label htmlFor="userInput" className="block font-bold mb-2">
-            Enter Input:
+        {/* Input box */}
+        <section className="mt-6">
+          <label htmlFor="userInput" className="block mb-2 font-semibold text-white">
+            Custom Input
           </label>
           <textarea
             id="userInput"
-            className="w-full h-[100px] bg-[#1a1a26] text-white text-sm p-2 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Type your input here..."
+            rows={5}
+            className="w-full p-3 rounded bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none text-white font-mono"
+            placeholder="Type input for your program here..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
-        </div>
+        </section>
       </div>
 
       {/* Right Section */}
-      <div className="w-1/2 flex flex-col p-4">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-4">
+      <div className="w-1/2 flex flex-col p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex space-x-4 w-full max-w-md">
             <button
-              id="runButton"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-800 rounded text-white"
+              className={`flex-1 rounded px-6 py-3 font-semibold text-white transition-colors duration-200 ${
+                isSubmitDisabled ? "bg-gray-600 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+              }`}
+              disabled={isSubmitDisabled}
               onClick={callrun}
+              title={isSubmitDisabled ? "Cannot run due to low similarity" : ""}
             >
               Run
             </button>
             <button
-              id="submitButton"
-              className={`px-4 py-2 rounded text-white ${
-                isSubmitDisabled
-                  ? "bg-gray-600 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-800"
+              className={`flex-1 rounded px-6 py-3 font-semibold text-white transition-colors duration-200 ${
+                isSubmitDisabled ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
               }`}
-              onClick={callsubmit}
               disabled={isSubmitDisabled}
+              onClick={callsubmit}
+              title={isSubmitDisabled ? "Cannot submit due to low similarity" : ""}
             >
               Submit
             </button>
           </div>
-          <p id="similarity_score" className="text-sm ml-4">
-            Code Diff: {similarityScore}%
-          </p>
+          <span className="ml-4 font-mono">{`Code Diff: ${similarityScore}%`}</span>
         </div>
 
         <Editor
@@ -317,12 +334,58 @@ export default function CodeEditorPage() {
           onChange={(value) => setCode(value || "")}
           theme="vs-dark"
           options={{
-            fontSize: 14,
+            fontSize: 15,
             minimap: { enabled: false },
             padding: { top: 10 },
+            fontFamily: "'Fira Mono', monospace",
           }}
         />
       </div>
     </div>
   );
+
+  async function callsubmit() {
+    if (selectedProblemIndex === null) {
+      alert("Please select a problem before submitting.");
+      return;
+    }
+    const problemId = problems[selectedProblemIndex].id;
+    const langMapping = {
+      py: "py",
+      python: "py",
+      java: "java",
+      cpp: "cpp",
+      "c++": "cpp",
+    };
+    const lang = langMapping[language.toLowerCase()] || "py";
+
+    try {
+      const result = await submit(lang, code, problemId, userId, userName, input);
+      setOutput(result.output || result.error || "Unknown error during submission");
+    } catch {
+      setOutput("Error during submission.");
+    }
+  }
+
+  async function callrun() {
+    if (selectedProblemIndex === null) {
+      alert("Please select a problem before running.");
+      return;
+    }
+    const langMapping = {
+      py: "py",
+      python: "py",
+      java: "java",
+      cpp: "cpp",
+      "c++": "cpp",
+    };
+    const lang = langMapping[language.toLowerCase()] || "py";
+
+    try {
+      const result = await run(lang, code, input);
+      setOutput(result.output || result.error || "Unknown error during run");
+    } catch {
+      setOutput("Error during run.");
+    }
+  }
 }

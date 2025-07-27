@@ -29,7 +29,7 @@ function getExecutor(format) {
 
 // POST /submit endpoint: runs all testcases for the given problem
 compiler.post("/submit", async (req, res) => {
-  const { format, code, problemId, userId } = req.body;
+  const { format, code, problemId, userId, userName } = req.body;
 
   if (!code) {
     return res.status(400).json({ success: false, error: "Code not provided" });
@@ -103,7 +103,7 @@ compiler.post("/submit", async (req, res) => {
     await axios.post("http://localhost:5174/api/submissions", {
       problem: problemId,
       user: userId,
-      username: "vignesh",
+      username: userName,
       score: finalScore,
       result: finalResult,
       time: totalTime || null,
