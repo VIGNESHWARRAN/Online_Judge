@@ -1,6 +1,5 @@
 const CONTEST_API_BASE = "http://localhost:5174/api/contests";
 
-// Create a new contest
 export function addContest(contestData) {
   return fetch(CONTEST_API_BASE, {
     method: "POST",
@@ -14,10 +13,10 @@ export function addContest(contestData) {
     })
     .catch((err) => {
       console.error("Error adding contest:", err);
+      throw err;
     });
 }
 
-// Get all contests
 export function readContests() {
   return fetch(CONTEST_API_BASE, { credentials: "include" })
     .then((res) => {
@@ -26,12 +25,11 @@ export function readContests() {
     })
     .catch((err) => {
       console.error("Error fetching contests:", err);
+      throw err;
     });
 }
 
-// Get a single contest by ID
 export function readContest(contestId) {
-    console.log(readContest);
   return fetch(`${CONTEST_API_BASE}/${contestId}`, { credentials: "include" })
     .then((res) => {
       if (!res.ok) throw new Error("Contest not found");
@@ -39,10 +37,10 @@ export function readContest(contestId) {
     })
     .catch((err) => {
       console.error("Error reading contest:", err);
+      throw err;
     });
 }
 
-// Update a contest by ID
 export function updateContest(contestId, updatedData) {
   return fetch(`${CONTEST_API_BASE}/${contestId}`, {
     method: "PUT",
@@ -56,10 +54,10 @@ export function updateContest(contestId, updatedData) {
     })
     .catch((err) => {
       console.error("Error updating contest:", err);
+      throw err;
     });
 }
 
-// Delete a contest by ID
 export function deleteContest(contestId) {
   return fetch(`${CONTEST_API_BASE}/${contestId}`, {
     method: "DELETE",
@@ -71,10 +69,10 @@ export function deleteContest(contestId) {
     })
     .catch((err) => {
       console.error("Error deleting contest:", err);
+      throw err;
     });
 }
 
-// Register user for a contest
 export function registerUser(contestId, userId) {
   return fetch(`${CONTEST_API_BASE}/register`, {
     method: "POST",
@@ -88,10 +86,10 @@ export function registerUser(contestId, userId) {
     })
     .catch((err) => {
       console.error("Error registering user for contest:", err);
+      throw err;
     });
 }
 
-// Unregister user from a contest (optional)
 export function unregisterUserFromContest(contestId, userId) {
   return fetch(`${CONTEST_API_BASE}/unregister`, {
     method: "POST",
@@ -105,5 +103,36 @@ export function unregisterUserFromContest(contestId, userId) {
     })
     .catch((err) => {
       console.error("Error unregistering user from contest:", err);
+      throw err;
     });
+}
+
+export async function addProblemToContest(contestId, problemId) {
+  try {
+    const contestRes = await fetch(`${CONTEST_API_BASE}/${contestId}`, { credentials: "include" });
+    if (!contestRes.ok) throw new Error("Contest not found");
+
+    const contest = await contestRes.json();
+    const problems = contest.problems || [];
+
+    if (!problems.includes(problemId)) {
+      problems.push(problemId);
+    }
+
+    const updatedContest = { ...contest, problems };
+
+    const updateRes = await fetch(`${CONTEST_API_BASE}/${contestId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(updatedContest),
+    });
+
+    if (!updateRes.ok) throw new Error("Failed to update contest with new problem");
+
+    return await updateRes.json();
+  } catch (err) {
+    console.error("Error adding problem to contest:", err);
+    throw err;
+  }
 }

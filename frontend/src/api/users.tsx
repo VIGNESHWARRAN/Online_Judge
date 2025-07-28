@@ -61,3 +61,21 @@ export function deleteUser(userId) {
             console.error("Error deleting user:", err);
         });
 }
+
+// PATCH update user's contest field
+export function updateUserContest(userId, contestId) {
+  return fetch(`${API_BASE}/${userId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ contest: contestId}),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Failed to update user contest");
+      return res.json();
+    })
+    .catch((err) => {
+      console.error("Error updating user contest:", err);
+      throw err;
+    });
+}

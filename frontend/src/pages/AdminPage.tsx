@@ -21,7 +21,8 @@ import {
   readContests,
   deleteContest,
   updateContest,
-} from "../api/contests"; // ensure this API module is implemented
+  addProblemToContest,
+} from "../api/contests";
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -29,12 +30,9 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [problems, setProblems] = useState([]);
   const [contests, setContests] = useState([]);
-
   const [error, setError] = useState("");
   const [view, setView] = useState("users");
-
-  // For filtering problems by contest/practice:
-  const [selectedContestId, setSelectedContestId] = useState("practice"); // 'practice' means no contest
+  const [selectedContestId, setSelectedContestId] = useState("practice"); // For filtering problems list
 
   // Users state
   const [newUser, setNewUser] = useState({
@@ -54,7 +52,6 @@ export default function AdminPage() {
     codeBase: "",
     testcases: [{ input: "", output: "" }],
     constraintLimit: 0,
-    contestId: "", // empty means practice problem
   });
   const [editProblemId, setEditProblemId] = useState(null);
 
@@ -62,12 +59,15 @@ export default function AdminPage() {
   const [newContest, setNewContest] = useState({
     id: "",
     name: "",
-    start: null, // Store as Date object
-    end: null,   // Store as Date object
+    start: null,
+    end: null,
   });
   const [editContestId, setEditContestId] = useState(null);
 
-  // Load initial data on mount
+  // For tracking multi-selection of contests to assign a problem
+  // Map of problemId => Set of selected contest ids
+  const [problemContestSelections, setProblemContestSelections] = useState({});
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -79,11 +79,18 @@ export default function AdminPage() {
         readProblems(),
         readContests(),
       ]);
+
+      // Ensure contests have a problems array
+      const contestsWithProblems = (contestsData || []).map((c) => ({
+        ...c,
+        problems: c.problems || [],
+      }));
+
       setUsers(usersData || []);
       setProblems(problemsData || []);
-      setContests(contestsData || []);
+      setContests(contestsWithProblems);
       setError("");
-    } catch (err) {
+    } catch {
       setError("Failed to load data");
     }
   };
@@ -91,13 +98,15 @@ export default function AdminPage() {
   // -------- User Handlers --------
   const handleUserSave = async () => {
     const { id, name, email, type } = newUser;
-    if (!id.trim() || !name.trim() || !email.trim() || !type.trim())
-      return setError("Fill all user fields.");
+    if (!id.trim() || !name.trim() || !email.trim() || !type.trim()) {
+      setError("Fill all user fields.");
+      return;
+    }
     try {
       if (editUserId) {
         await updateUser(editUserId, newUser);
       } else {
-        await addUser({ ...newUser });
+        await addUser(newUser);
       }
       setNewUser({ id: "", name: "", email: "", type: "user" });
       setEditUserId(null);
@@ -107,10 +116,12 @@ export default function AdminPage() {
       setError("Error saving user.");
     }
   };
+
   const handleEditUser = (user) => {
     setNewUser(user);
     setEditUserId(user.id);
   };
+
   const handleDeleteUser = async (id) => {
     try {
       await deleteUser(id);
@@ -122,23 +133,24 @@ export default function AdminPage() {
 
   // -------- Problem Handlers --------
   const handleProblemSave = async () => {
-    const { title, description, score, codeBase, testcases, constraintLimit } =
-      newProblem;
-    if (
-      !title.trim() ||
-      !description.trim() ||
-      !score ||
-      !codeBase.trim() ||
-      !constraintLimit
-    ) {
-      return setError("Fill all problem and testcase fields.");
+    const { title, description, score, codeBase, testcases, constraintLimit } = newProblem;
+
+    if (!title.trim() || !description.trim() || !score || !codeBase.trim() || !constraintLimit) {
+      setError("Fill all problem and testcase fields.");
+      return;
     }
+
     try {
       if (editProblemId) {
-        await updateProblem(editProblemId, newProblem);
+        const problemToUpdate = { ...newProblem };
+        delete problemToUpdate.contestId;
+        await updateProblem(editProblemId, problemToUpdate);
       } else {
         const newId = uuidv4();
-        await addProblem({ ...newProblem, id: newId });
+        const problemToAdd = { ...newProblem };
+        delete problemToAdd.contestId;
+        problemToAdd.id = newId;
+        await addProblem(problemToAdd);
       }
       setNewProblem({
         id: "",
@@ -148,23 +160,37 @@ export default function AdminPage() {
         codeBase: "",
         testcases: [{ input: "", output: "" }],
         constraintLimit: 0,
-        contestId: "", // reset to practice on new problem form
       });
       setEditProblemId(null);
-      await fetchData();
       setError("");
-    } catch {
+      await fetchData();
+    } catch (err) {
       setError("Error saving problem.");
+      console.error(err);
     }
   };
+
   const handleEditProblem = (problem) => {
-    setNewProblem(problem);
+    const { contestId, ...rest } = problem;
+    setNewProblem(rest);
     setEditProblemId(problem.id);
-    setSelectedContestId(problem.contestId || "practice");
   };
+
   const handleDeleteProblem = async (id) => {
     try {
       await deleteProblem(id);
+
+      // Remove problem id from all contests
+      const contestsToUpdate = contests.filter((contest) =>
+        contest.problems?.includes(id)
+      );
+
+      for (const contest of contestsToUpdate) {
+        const updatedProblems = contest.problems.filter((pid) => pid !== id);
+        const updatedContest = { ...contest, problems: updatedProblems };
+        await updateContest(contest.id || contest._id, updatedContest);
+      }
+
       await fetchData();
     } catch {
       setError("Error deleting problem");
@@ -176,19 +202,20 @@ export default function AdminPage() {
     const { name, start, end } = newContest;
 
     if (!name.trim() || !start || !end) {
-      return setError("Fill all contest fields.");
+      setError("Fill all contest fields.");
+      return;
     }
 
-    // Validate start < end
     if (start >= end) {
-      return setError("Start date/time must be before end date/time.");
+      setError("Start date/time must be before end date/time.");
+      return;
     }
 
-    // Prepare contest object for saving: convert Dates to ISO strings
     const contestToSave = {
       ...newContest,
       start: start.toISOString(),
       end: end.toISOString(),
+      problems: newContest.problems || [],
     };
 
     try {
@@ -206,15 +233,18 @@ export default function AdminPage() {
       setError("Error saving contest.");
     }
   };
+
   const handleEditContest = (contest) => {
     setNewContest({
       id: contest.id || contest._id || "",
       name: contest.name || "",
       start: contest.start ? new Date(contest.start) : null,
       end: contest.end ? new Date(contest.end) : null,
+      problems: contest.problems || [],
     });
     setEditContestId(contest.id || contest._id);
   };
+
   const handleDeleteContest = async (id) => {
     try {
       await deleteContest(id);
@@ -225,12 +255,83 @@ export default function AdminPage() {
     }
   };
 
-  // Filter problems by selected contest or practice
-  const filteredProblems = problems.filter((p) =>
-    selectedContestId === "practice"
-      ? !p.contestId || p.contestId === ""
-      : p.contestId === selectedContestId
-  );
+  // Filter problems by selected contest or practice (unassigned)
+  const filteredProblems = problems.filter((p) => {
+    if (selectedContestId === "practice") {
+      const assignedProblemIds = new Set();
+      contests.forEach((c) => {
+        (c.problems || []).forEach((pid) => assignedProblemIds.add(pid));
+      });
+      return !assignedProblemIds.has(p.id);
+    } else {
+      const contest = contests.find((c) => (c.id || c._id) === selectedContestId);
+      if (!contest) return false;
+      return (contest.problems || []).includes(p.id);
+    }
+  });
+
+  // Toggle checkbox selection for contests to assign for a problem
+  const toggleProblemContestSelection = (problemId, contestId) => {
+    setProblemContestSelections((prev) => {
+      const prevSet = prev[problemId] || new Set();
+      const newSet = new Set(prevSet);
+      if (newSet.has(contestId)) {
+        newSet.delete(contestId);
+      } else {
+        newSet.add(contestId);
+      }
+      return { ...prev, [problemId]: newSet };
+    });
+  };
+
+  // Use provided API helper to assign problem to selected contests
+  const handleAssignProblemToContests = async (problemId) => {
+    const selectedContestIds = problemContestSelections[problemId];
+    if (!selectedContestIds || selectedContestIds.size === 0) {
+      setError("Select at least one contest.");
+      return;
+    }
+    try {
+      let updatedAny = false;
+      for (const contestId of selectedContestIds) {
+        await addProblemToContest(contestId, problemId);
+        updatedAny = true;
+      }
+      if (updatedAny) {
+        setError("");
+        setProblemContestSelections((prev) => ({ ...prev, [problemId]: new Set() }));
+        await fetchData();
+      }
+    } catch (err) {
+      setError("Error assigning problem to contests.");
+      console.error(err);
+    }
+  };
+
+  // Remove problem from contest
+  const handleRemoveProblemFromContest = async (contestId, problemId) => {
+    try {
+      const contest = contests.find((c) => (c.id || c._id) === contestId);
+      if (!contest) return;
+
+      const updatedProblems = (contest.problems || []).filter((pid) => pid !== problemId);
+      const updatedContest = { ...contest, problems: updatedProblems };
+
+      await updateContest(contest.id || contest._id, updatedContest);
+      await fetchData();
+      setError("");
+    } catch (err) {
+      setError("Error removing problem from contest.");
+      console.error(err);
+    }
+  };
+
+  // Check if problem already assigned to a contest
+  const isProblemAssignedToContest = (problemId, contestId) => {
+    const contest = contests.find((c) => (c.id || c._id) === contestId);
+    if (!contest) return false;
+    return (contest.problems || []).includes(problemId);
+  };
 
   // ----- Render Sections -----
 
@@ -304,15 +405,15 @@ export default function AdminPage() {
     <section>
       <h2 className="text-2xl font-semibold mb-4 text-white">📘 Manage Problems</h2>
 
-      {/* Contest selector */}
+      {/* Contest selector for filtering */}
       <div className="mb-4">
-        <label className="mr-2 text-white font-semibold">Select Contest:</label>
+        <label className="mr-2 text-white font-semibold">Filter Problems by Contest:</label>
         <select
           className="p-2 bg-zinc-900 text-white rounded"
           value={selectedContestId}
           onChange={(e) => setSelectedContestId(e.target.value)}
         >
-          <option value="practice">Practice (No Contest)</option>
+          <option value="">Problems Not Assigned</option>
           {contests.map((contest) => (
             <option key={contest.id || contest._id} value={contest.id || contest._id}>
               {contest.name}
@@ -321,6 +422,7 @@ export default function AdminPage() {
         </select>
       </div>
 
+      {/* Problem input fields */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
         <input
           className="p-2 bg-zinc-900 text-white rounded"
@@ -346,7 +448,7 @@ export default function AdminPage() {
           <label className="block mb-1 text-white">Code Base File:</label>
           <input
             type="file"
-            accept=".js,.py,.txt,.java,.cpp,.*"
+            accept=".js,.py,.txt,.java,.cpp,*"
             className="p-2 bg-zinc-900 text-white rounded"
             onChange={async (e) => {
               const file = e.target.files[0];
@@ -367,20 +469,6 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-
-        {/* Select contest for problem */}
-        <select
-          className="p-2 bg-zinc-900 text-white rounded md:col-span-3"
-          value={newProblem.contestId || ""}
-          onChange={(e) => setNewProblem({ ...newProblem, contestId: e.target.value })}
-        >
-          <option value="">Practice (No Contest)</option>
-          {contests.map((contest) => (
-            <option key={contest.id || contest._id} value={contest.id || contest._id}>
-              {contest.name}
-            </option>
-          ))}
-        </select>
 
         {/* Testcases input */}
         <div className="col-span-1 md:col-span-3">
@@ -443,9 +531,7 @@ export default function AdminPage() {
           className="p-2 bg-zinc-900 text-white rounded"
           placeholder="Constraint Limit"
           value={newProblem.constraintLimit}
-          onChange={(e) =>
-            setNewProblem({ ...newProblem, constraintLimit: Number(e.target.value) })
-          }
+          onChange={(e) => setNewProblem({ ...newProblem, constraintLimit: Number(e.target.value) })}
         />
 
         <button
@@ -456,33 +542,104 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {/* Problems list */}
-      <ul className="space-y-2">
-        {filteredProblems.map((problem) => (
-          <li
-            key={problem.id}
-            className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center"
-          >
-            <span>
-              <strong>{problem.title}</strong> — Score: {problem.score} | Limit: {problem.constraintLimit}
-            </span>
-            <div className="space-x-2">
+      {/* Assign Problems to Contests Section */}
+      <section className="mb-8">
+        <h3 className="text-xl font-semibold text-white mb-3">🔗 Assign Problems to Contests</h3>
+        {problems.length === 0 && <p className="text-gray-400">No problems available yet.</p>}
+        <ul className="space-y-4 max-h-[400px] overflow-auto">
+          {problems.map((problem) => (
+            <li
+              key={problem.id}
+              className="bg-zinc-700 p-4 rounded flex flex-col md:flex-row md:items-center md:justify-between"
+            >
+              <div className="flex-1">
+                <strong>{problem.title}</strong> — Score: {problem.score}
+                <div className="text-xs mt-1 text-gray-400">ID: {problem.id}</div>
+              </div>
+
+              <div className="mt-2 md:mt-0 flex flex-wrap gap-3 max-w-lg">
+                {contests.map((contest) => {
+                  const contestId = contest.id || contest._id;
+                  const isAssigned = isProblemAssignedToContest(problem.id, contestId);
+                  const isSelected = problemContestSelections[problem.id]?.has(contestId) || false;
+
+                  return (
+                    <label
+                      key={contestId}
+                      title={contest.name}
+                      className={`inline-flex items-center px-2 py-1 rounded cursor-pointer select-none ${
+                        isSelected ? "bg-indigo-600" : "bg-zinc-900"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        disabled={isAssigned}
+                        checked={isAssigned || isSelected}
+                        onChange={() => toggleProblemContestSelection(problem.id, contestId)}
+                        className="mr-1"
+                      />
+                      <span className={isAssigned ? "line-through text-gray-400" : ""}>
+                        {contest.name}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
               <button
-                onClick={() => handleEditProblem(problem)}
-                className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded"
+                disabled={
+                  !problemContestSelections[problem.id] || problemContestSelections[problem.id].size === 0
+                }
+                onClick={() => handleAssignProblemToContests(problem.id)}
+                className={`ml-0 md:ml-4 mt-3 md:mt-0 bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white ${
+                  !problemContestSelections[problem.id] ||
+                  problemContestSelections[problem.id].size === 0
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
               >
-                Edit
+                Assign Selected Contests
               </button>
-              <button
-                onClick={() => handleDeleteProblem(problem.id)}
-                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
-              >
-                Delete
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Problems filtered */}
+      <section>
+        <h3 className="text-xl font-semibold text-white mb-3">
+          📄 {selectedContestId === "practice" ? "Practice Problems (No Contest Assigned)" : `Problems in Contest`}
+        </h3>
+        {filteredProblems.length === 0 && (
+          <p className="text-gray-400">No problems to show for the selected filter.</p>
+        )}
+        <ul className="space-y-2">
+          {filteredProblems.map((problem) => (
+            <li
+              key={problem.id}
+              className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center"
+            >
+              <span>
+                <strong>{problem.title}</strong> — Score: {problem.score} | Limit: {problem.constraintLimit}
+              </span>
+              <div className="space-x-2">
+                <button
+                  onClick={() => handleEditProblem(problem)}
+                  className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteProblem(problem.id)}
+                  className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
     </section>
   );
 
@@ -502,7 +659,7 @@ export default function AdminPage() {
           <label className="block mb-1 text-white font-semibold">Start Date & Time</label>
           <DatePicker
             selected={newContest.start}
-            onChange={date => setNewContest(prev => ({ ...prev, start: date }))}
+            onChange={(date) => setNewContest((prev) => ({ ...prev, start: date }))}
             showTimeSelect
             timeIntervals={15}
             dateFormat="yyyy-MM-dd HH:mm"
@@ -515,7 +672,7 @@ export default function AdminPage() {
           <label className="block mb-1 text-white font-semibold">End Date & Time</label>
           <DatePicker
             selected={newContest.end}
-            onChange={date => setNewContest(prev => ({ ...prev, end: date }))}
+            onChange={(date) => setNewContest((prev) => ({ ...prev, end: date }))}
             showTimeSelect
             timeIntervals={15}
             dateFormat="yyyy-MM-dd HH:mm"
@@ -538,14 +695,44 @@ export default function AdminPage() {
         {contests.map((contest) => (
           <li
             key={contest.id || contest._id}
-            className="bg-zinc-800 text-white p-3 rounded flex justify-between items-center"
+            className="bg-zinc-800 text-white p-3 rounded flex flex-col md:flex-row md:justify-between md:items-center"
           >
-            <span>
-              <strong>{contest.name}</strong> —{" "}
-              {new Date(contest.start).toLocaleString()} to{" "}
+            <div>
+              <strong>{contest.name}</strong> — {new Date(contest.start).toLocaleString()} to{" "}
               {new Date(contest.end).toLocaleString()}
-            </span>
-            <div className="space-x-2">
+            </div>
+            {/* Show problems in contest with Remove option */}
+            <div className="mt-2 md:mt-0">
+              {contest.problems && contest.problems.length > 0 ? (
+                <details className="cursor-pointer bg-zinc-700 rounded p-2">
+                  <summary className="font-semibold text-sm mb-1 text-white">
+                    Problems ({contest.problems.length})
+                  </summary>
+                  <ul className="list-decimal list-inside max-h-48 overflow-auto text-sm">
+                    {contest.problems.map((pid) => {
+                      const problem = problems.find((p) => p.id === pid);
+                      return (
+                        <li key={pid} className="flex justify-between items-center">
+                          <span>{problem ? problem.title : `Unknown Problem: ${pid}`}</span>
+                          {problem && (
+                            <button
+                              onClick={() => handleRemoveProblemFromContest(contest.id || contest._id, pid)}
+                              className="ml-4 bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded text-xs"
+                              title="Remove Problem from Contest"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </details>
+              ) : (
+                <span className="text-sm italic text-gray-400">No problems assigned</span>
+              )}
+            </div>
+            <div className="space-x-2 mt-2 md:mt-0">
               <button
                 onClick={() => handleEditContest(contest)}
                 className="bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded"
@@ -573,38 +760,30 @@ export default function AdminPage() {
       <div className="flex justify-center gap-6 mb-8">
         <button
           onClick={() => setView("users")}
-          className={`px-4 py-2 rounded ${
-            view === "users" ? "bg-indigo-600" : "bg-zinc-800"
-          }`}
+          className={`px-4 py-2 rounded ${view === "users" ? "bg-indigo-600" : "bg-zinc-800"}`}
         >
           Users
         </button>
         <button
           onClick={() => setView("problems")}
-          className={`px-4 py-2 rounded ${
-            view === "problems" ? "bg-blue-600" : "bg-zinc-800"
-          }`}
+          className={`px-4 py-2 rounded ${view === "problems" ? "bg-blue-600" : "bg-zinc-800"}`}
         >
           Problems
         </button>
         <button
           onClick={() => setView("contests")}
-          className={`px-4 py-2 rounded ${
-            view === "contests" ? "bg-green-600" : "bg-zinc-800"
-          }`}
+          className={`px-4 py-2 rounded ${view === "contests" ? "bg-green-600" : "bg-zinc-800"}`}
         >
           Contests
         </button>
       </div>
 
-      {/* Error Message */}
+      {/* Error message */}
       {error && (
-        <div className="bg-red-600 text-white p-3 mb-6 rounded text-center">
-          {error}
-        </div>
+        <div className="bg-red-600 text-white p-3 mb-6 rounded text-center">{error}</div>
       )}
 
-      {/* Conditional rendering of sections */}
+      {/* View sections */}
       {view === "users"
         ? renderUserSection()
         : view === "problems"

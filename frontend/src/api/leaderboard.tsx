@@ -1,3 +1,5 @@
+// leaderboard.ts
+
 export interface Submission {
   user: string;
   username: string;
@@ -5,6 +7,7 @@ export interface Submission {
   result: string; // "Accepted" or others
   score: number;
   submittedAt: string; // ISO string
+  contestId?: string; // optionally present in submissions
 }
 
 export interface LeaderboardEntry {
@@ -14,37 +17,44 @@ export interface LeaderboardEntry {
   avgTimePercentile: number; // 0 to 100, higher is better
 }
 
+export interface Contest {
+  id: string;
+  problems: string[];
+}
+
 /**
- * Calculate leaderboard entries filtered by contest problems.
- * @param submissions All submissions (across contests)
- * @param contestProblemIds Problem IDs belonging to the contest
- * @returns Sorted leaderboard entries for the contest
+ * Calculates a leaderboard for a single contest based on submissions and problem IDs.
+ * @param submissions - All submissions (optionally filtered).
+ * @param contestProblemIds - Problem IDs belonging to the contest.
+ * @returns Sorted leaderboard entries array.
  */
-export function calculateLeaderboardByContest(
+export function calculateLeaderboard(
   submissions: Submission[],
   contestProblemIds: string[]
 ): LeaderboardEntry[] {
-  // Filter submissions to only those related to the contest's problems
-  const filteredSubs = submissions.filter(sub => contestProblemIds.includes(sub.problem));
+  // Filter submissions to those for problems in contest
+  const filteredSubs = submissions.filter((sub) =>
+    contestProblemIds.includes(sub.problem)
+  );
 
+  // Map: user -> problem -> earliest accepted submission
   const userProblemMap: Record<string, Record<string, Submission>> = {};
+  // Map: problem -> list of accepted submissions for percentile calculation
   const problemSubmissionsMap: Record<string, Submission[]> = {};
 
-  // Step 1: Keep only the earliest accepted submission per user & problem
+  // Track earliest accepted submission for each user & problem
   for (const sub of filteredSubs) {
     if (sub.result !== "Accepted") continue;
 
-    const { user, problem } = sub;
+    if (!userProblemMap[sub.user]) userProblemMap[sub.user] = {};
+    const existingSub = userProblemMap[sub.user][sub.problem];
 
-    if (!userProblemMap[user]) userProblemMap[user] = {};
-    const existing = userProblemMap[user][problem];
-
-    if (!existing || new Date(sub.submittedAt) < new Date(existing.submittedAt)) {
-      userProblemMap[user][problem] = sub;
+    if (!existingSub || new Date(sub.submittedAt) < new Date(existingSub.submittedAt)) {
+      userProblemMap[sub.user][sub.problem] = sub;
     }
   }
 
-  // Step 2: Aggregate problem-wise accepted submissions
+  // Aggregate accepted submissions per problem
   for (const user in userProblemMap) {
     for (const problem in userProblemMap[user]) {
       const sub = userProblemMap[user][problem];
@@ -53,14 +63,13 @@ export function calculateLeaderboardByContest(
     }
   }
 
-  // Step 3: Compute time percentile ranks per problem
+  // Calculate time percentile ranks per problem
   const problemTimePercentiles: Record<string, Record<string, number>> = {};
-
   for (const problem in problemSubmissionsMap) {
     const subs = problemSubmissionsMap[problem];
-    const times = subs.map(s => new Date(s.submittedAt).getTime());
-    const sortedTimes = [...times].sort((a, b) => a - b);
-
+    const sortedTimes = subs
+      .map((s) => new Date(s.submittedAt).getTime())
+      .sort((a, b) => a - b);
     problemTimePercentiles[problem] = {};
 
     for (const sub of subs) {
@@ -70,40 +79,44 @@ export function calculateLeaderboardByContest(
       if (sortedTimes.length === 1) {
         percentile = 100;
       } else {
-        const rank = sortedTimes.findIndex(x => x >= t);
+        const rank = sortedTimes.findIndex((time) => time >= t);
         percentile = ((sortedTimes.length - rank - 1) / (sortedTimes.length - 1)) * 100;
       }
 
+      // Store percentile rounded to 2 decimals
       problemTimePercentiles[problem][sub.user] = parseFloat(percentile.toFixed(2));
     }
   }
 
-  // Step 4: Aggregate user leaderboard entries
+  // Build leaderboard entries per user
   const leaderboard: LeaderboardEntry[] = [];
 
   for (const user in userProblemMap) {
-    const problems = userProblemMap[user];
-    const correctSubs = Object.values(problems);
-    const totalScore = correctSubs.reduce((acc, sub) => acc + sub.score, 0);
-    const username = correctSubs[0]?.username || "Unknown";
+    const solvedSubs = Object.values(userProblemMap[user]);
+    const totalScore = solvedSubs.reduce((acc, sub) => acc + (sub.score || 0), 0);
+    const username = solvedSubs[0]?.username || "Unknown";
 
-    const percentiles = correctSubs.map(sub => {
-      return problemTimePercentiles[sub.problem]?.[user] ?? 0;
-    });
-
-    const avgTimePercentile = percentiles.length
-      ? percentiles.reduce((a, b) => a + b, 0) / percentiles.length
-      : 0;
+    const avgTimePercentile =
+      solvedSubs.length === 0
+        ? 0
+        : parseFloat(
+            (
+              solvedSubs.reduce(
+                (acc, sub) => acc + (problemTimePercentiles[sub.problem]?.[user] ?? 0),
+                0
+              ) / solvedSubs.length
+            ).toFixed(2)
+          );
 
     leaderboard.push({
       user,
       username,
       totalScore,
-      avgTimePercentile: parseFloat(avgTimePercentile.toFixed(2)),
+      avgTimePercentile,
     });
   }
 
-  // Step 5: Sort leaderboard by total score desc, then time percentile desc
+  // Sort leaderboard by totalScore descending, then avgTimePercentile descending
   leaderboard.sort((a, b) => {
     if (b.totalScore !== a.totalScore) {
       return b.totalScore - a.totalScore;
@@ -112,4 +125,41 @@ export function calculateLeaderboardByContest(
   });
 
   return leaderboard;
+}
+
+/**
+ * Calculates leaderboards grouped by contest.
+ * @param submissions - Array of all submissions.
+ * @param contests - List of contests with problem arrays.
+ * @returns Map of contest ID -> sorted leaderboard entries.
+ */
+export function calculateLeaderboards(
+  submissions: Submission[],
+  contests: Contest[]
+): Record<string, LeaderboardEntry[]> {
+  const leaderboards: Record<string, LeaderboardEntry[]> = {};
+
+  for (const contest of contests) {
+    // Defensive - ensure problems array present
+    if (!Array.isArray(contest.problems)) {
+      leaderboards[contest.id] = [];
+      continue;
+    }
+    leaderboards[contest.id] = calculateLeaderboard(submissions, contest.problems);
+  }
+
+  return leaderboards;
+}
+
+/**
+ * Optional helper to filter submissions by contestID before leaderboard calculation.
+ * @param submissions All submissions.
+ * @param contestId Contest ID to filter submissions.
+ * @returns Submissions filtered to the contest.
+ */
+export function filterSubmissionsByContestId(
+  submissions: Submission[],
+  contestId: string
+): Submission[] {
+  return submissions.filter((sub) => sub.contestId === contestId);
 }
