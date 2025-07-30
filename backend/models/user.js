@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   name:     { type: String, required: true },
   email:    { type: String, required: true, unique: true },
   type: { type: String, required: true},
+  contest: {type: mongoose.Schema.Types.ObjectId, ref: 'contest', default: null }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

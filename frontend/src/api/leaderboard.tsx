@@ -22,12 +22,6 @@ export interface Contest {
   problems: string[];
 }
 
-/**
- * Calculates a leaderboard for a single contest based on submissions and problem IDs.
- * @param submissions - All submissions (optionally filtered).
- * @param contestProblemIds - Problem IDs belonging to the contest.
- * @returns Sorted leaderboard entries array.
- */
 export function calculateLeaderboard(
   submissions: Submission[],
   contestProblemIds: string[]
@@ -127,12 +121,6 @@ export function calculateLeaderboard(
   return leaderboard;
 }
 
-/**
- * Calculates leaderboards grouped by contest.
- * @param submissions - Array of all submissions.
- * @param contests - List of contests with problem arrays.
- * @returns Map of contest ID -> sorted leaderboard entries.
- */
 export function calculateLeaderboards(
   submissions: Submission[],
   contests: Contest[]
@@ -151,12 +139,6 @@ export function calculateLeaderboards(
   return leaderboards;
 }
 
-/**
- * Optional helper to filter submissions by contestID before leaderboard calculation.
- * @param submissions All submissions.
- * @param contestId Contest ID to filter submissions.
- * @returns Submissions filtered to the contest.
- */
 export function filterSubmissionsByContestId(
   submissions: Submission[],
   contestId: string

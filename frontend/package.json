@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
+    "@google/genai": "^1.11.0",
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.10.0",
+    "dotenv": "^17.2.1",
     "mongoose": "^8.16.4",
     "nodemon": "^3.1.10",
     "react": "^19.1.0",

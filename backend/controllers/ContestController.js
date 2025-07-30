@@ -113,3 +113,66 @@ export const unregisterUserFromContest = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Add a problem to a contest's problems array
+export const addProblemToContest = async (req, res) => {
+  const { contestId, problemId } = req.body;
+  console.log(contestId, problemId);
+  if (!contestId || !problemId) {
+    return res.status(400).json({ message: "contestId and problemId are required" });
+  }
+
+  try {
+    const contest = await Contest.findById(contestId);
+    if (!contest) return res.status(404).json({ message: 'Contest not found' });
+
+    if (!contest.problems) {
+      contest.problems = [];
+    }
+    
+    // Avoid duplicates
+    if (contest.problems.includes(problemId)) {
+      return res.status(400).json({ message: 'Problem already added to contest' });
+    }
+
+    contest.problems.push(problemId);
+    await contest.save();
+
+    res.status(200).json({ message: 'Problem added to contest', contest });
+  } catch (error) {
+    console.error('Error adding problem to contest:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Remove a problem from a contest's problems array
+export const removeProblemFromContest = async (req, res) => {
+  const { contestId, problemId } = req.body;
+
+  if (!contestId || !problemId) {
+    return res.status(400).json({ message: "contestId and problemId are required" });
+  }
+
+  try {
+    const contest = await Contest.findById(contestId);
+    if (!contest) return res.status(404).json({ message: 'Contest not found' });
+
+    if (!contest.problems || contest.problems.length === 0) {
+      return res.status(400).json({ message: 'No problems associated with this contest' });
+    }
+
+    const originalCount = contest.problems.length;
+    contest.problems = contest.problems.filter(pid => pid.toString() !== problemId);
+
+    if (contest.problems.length === originalCount) {
+      return res.status(400).json({ message: 'Problem not found in contest' });
+    }
+
+    await contest.save();
+
+    res.status(200).json({ message: 'Problem removed from contest', contest });
+  } catch (error) {
+    console.error('Error removing problem from contest:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

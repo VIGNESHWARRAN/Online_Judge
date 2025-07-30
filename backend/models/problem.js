@@ -13,7 +13,6 @@ const problemSchema = new mongoose.Schema({
     }
   ],
   constraintLimit: { type: Number, required: true },
-  contestId: { type: mongoose.Schema.Types.ObjectId, ref: 'Contest', default: null }
 }, { timestamps: true });
 
 export default mongoose.model('Problem', problemSchema);

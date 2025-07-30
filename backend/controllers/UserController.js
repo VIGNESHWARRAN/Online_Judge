@@ -61,3 +61,20 @@ export const deleteUser = async (req, res) => {
 export const logoutUser = (req, res) => {
   res.json({ message: 'Logged out successfully' });
 };
+
+// PARTIAL UPDATE USER BY CUSTOM ID (PATCH)
+export const partialUpdateUser = async (req, res) => {
+  try {
+    // Find user by custom ID and update only the fields provided in req.body
+    const updated = await User.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: req.body },    // Use $set to only update specified fields
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ error: 'User not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};

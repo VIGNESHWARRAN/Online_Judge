@@ -11,8 +11,9 @@ const generateFile = async (format, content) => {
 
     try {
         await fs.mkdir(dirCodes, { recursive: true }); // ensures folder exists
-        await fs.writeFile(filePath, content);          // async write
-        return filePath;
+        await fs.writeFile(filePath, content);         // async write
+        return { filepath: filePath, uuid: jobID };
+
     } catch (err) {
         console.error("Error writing file:", err);
         throw err;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-
+import { setAiAssistanceEnabled, fetchAiAssistanceEnabled } from "../api/aiService";
 import {
   addUser,
   readUsers,
@@ -32,7 +32,41 @@ export default function AdminPage() {
   const [contests, setContests] = useState([]);
   const [error, setError] = useState("");
   const [view, setView] = useState("users");
-  const [selectedContestId, setSelectedContestId] = useState("practice"); // For filtering problems list
+  const [selectedContestId, setSelectedContestId] = useState("practice");
+
+  const [aiAssistanceEnabled, setAiAssistanceEnabledState] = useState(false);
+  const [aiToggleLoading, setAiToggleLoading] = useState(false);
+
+  // Fetch AI toggle status from backend on mount
+  useEffect(() => {
+    async function loadAiStatus() {
+      try {
+        const enabled = await fetchAiAssistanceEnabled();
+        setAiAssistanceEnabledState(enabled);
+        setError("");
+      } catch (err) {
+        console.error("Failed to load AI assistance status", err);
+        setError("Failed to load AI assistance status");
+      }
+    }
+    loadAiStatus();
+  }, []);
+
+  // Update backend and local state on toggle 
+  const toggleAiAssistance = async () => {
+    const newValue = !aiAssistanceEnabled;
+    setAiToggleLoading(true);
+    try {
+      await setAiAssistanceEnabled(newValue);
+      setAiAssistanceEnabledState(newValue);
+      setError("");
+    } catch (err) {
+      console.error("Failed to update AI assistance status", err);
+      setError("Failed to update AI assistance status");
+    } finally {
+      setAiToggleLoading(false);
+    }
+  };
 
   // Users state
   const [newUser, setNewUser] = useState({
@@ -64,8 +98,7 @@ export default function AdminPage() {
   });
   const [editContestId, setEditContestId] = useState(null);
 
-  // For tracking multi-selection of contests to assign a problem
-  // Map of problemId => Set of selected contest ids
+  // Multi-selection for assigning problems to contests
   const [problemContestSelections, setProblemContestSelections] = useState({});
 
   useEffect(() => {
@@ -80,7 +113,6 @@ export default function AdminPage() {
         readContests(),
       ]);
 
-      // Ensure contests have a problems array
       const contestsWithProblems = (contestsData || []).map((c) => ({
         ...c,
         problems: c.problems || [],
@@ -180,7 +212,6 @@ export default function AdminPage() {
     try {
       await deleteProblem(id);
 
-      // Remove problem id from all contests
       const contestsToUpdate = contests.filter((contest) =>
         contest.problems?.includes(id)
       );
@@ -270,7 +301,7 @@ export default function AdminPage() {
     }
   });
 
-  // Toggle checkbox selection for contests to assign for a problem
+  // Toggle checkbox selection for assigning problem to contests
   const toggleProblemContestSelection = (problemId, contestId) => {
     setProblemContestSelections((prev) => {
       const prevSet = prev[problemId] || new Set();
@@ -284,7 +315,7 @@ export default function AdminPage() {
     });
   };
 
-  // Use provided API helper to assign problem to selected contests
+  // Assign problem to selected contests
   const handleAssignProblemToContests = async (problemId) => {
     const selectedContestIds = problemContestSelections[problemId];
     if (!selectedContestIds || selectedContestIds.size === 0) {
@@ -326,7 +357,7 @@ export default function AdminPage() {
     }
   };
 
-  // Check if problem already assigned to a contest
+  // Check if problem already assigned to contest
   const isProblemAssignedToContest = (problemId, contestId) => {
     const contest = contests.find((c) => (c.id || c._id) === contestId);
     if (!contest) return false;
@@ -413,7 +444,7 @@ export default function AdminPage() {
           value={selectedContestId}
           onChange={(e) => setSelectedContestId(e.target.value)}
         >
-          <option value="">Problems Not Assigned</option>
+          <option value="practice">Problems Not Assigned</option>
           {contests.map((contest) => (
             <option key={contest.id || contest._id} value={contest.id || contest._id}>
               {contest.name}
@@ -567,9 +598,8 @@ export default function AdminPage() {
                     <label
                       key={contestId}
                       title={contest.name}
-                      className={`inline-flex items-center px-2 py-1 rounded cursor-pointer select-none ${
-                        isSelected ? "bg-indigo-600" : "bg-zinc-900"
-                      }`}
+                      className={`inline-flex items-center px-2 py-1 rounded cursor-pointer select-none ${isSelected ? "bg-indigo-600" : "bg-zinc-900"
+                        }`}
                     >
                       <input
                         type="checkbox"
@@ -591,12 +621,11 @@ export default function AdminPage() {
                   !problemContestSelections[problem.id] || problemContestSelections[problem.id].size === 0
                 }
                 onClick={() => handleAssignProblemToContests(problem.id)}
-                className={`ml-0 md:ml-4 mt-3 md:mt-0 bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white ${
-                  !problemContestSelections[problem.id] ||
-                  problemContestSelections[problem.id].size === 0
+                className={`ml-0 md:ml-4 mt-3 md:mt-0 bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white ${!problemContestSelections[problem.id] ||
+                    problemContestSelections[problem.id].size === 0
                     ? "opacity-50 cursor-not-allowed"
                     : ""
-                }`}
+                  }`}
               >
                 Assign Selected Contests
               </button>
@@ -701,7 +730,6 @@ export default function AdminPage() {
               <strong>{contest.name}</strong> — {new Date(contest.start).toLocaleString()} to{" "}
               {new Date(contest.end).toLocaleString()}
             </div>
-            {/* Show problems in contest with Remove option */}
             <div className="mt-2 md:mt-0">
               {contest.problems && contest.problems.length > 0 ? (
                 <details className="cursor-pointer bg-zinc-700 rounded p-2">
@@ -756,6 +784,19 @@ export default function AdminPage() {
     <div className="min-h-screen bg-black text-white p-10">
       <h1 className="text-4xl font-bold mb-8 text-center text-white">🛠 Admin Dashboard</h1>
 
+      {/* AI Assistance Toggle */}
+      <div className="flex justify-center mb-6">
+        <button
+          onClick={toggleAiAssistance}
+          disabled={aiToggleLoading}
+          className={`px-4 py-2 rounded ${aiAssistanceEnabled ? "bg-green-600" : "bg-red-600"
+            } ${aiToggleLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+          title="Toggle AI Assistance for Code Editor users"
+        >
+          {aiToggleLoading ? "Updating..." : (aiAssistanceEnabled ? "Disable AI Assistance" : "Enable AI Assistance")}
+        </button>
+      </div>
+
       {/* View tabs */}
       <div className="flex justify-center gap-6 mb-8">
         <button
@@ -779,16 +820,14 @@ export default function AdminPage() {
       </div>
 
       {/* Error message */}
-      {error && (
-        <div className="bg-red-600 text-white p-3 mb-6 rounded text-center">{error}</div>
-      )}
+      {error && <div className="bg-red-600 text-white p-3 mb-6 rounded text-center">{error}</div>}
 
       {/* View sections */}
       {view === "users"
         ? renderUserSection()
         : view === "problems"
-        ? renderProblemSection()
-        : renderContestSection()}
+          ? renderProblemSection()
+          : renderContestSection()}
     </div>
   );
 }

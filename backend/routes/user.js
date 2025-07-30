@@ -14,4 +14,6 @@ router.put('/:id', UserController.updateUser); //update user
 
 router.delete('/:id', UserController.deleteUser); // delete user
 
+router.patch('/:id', UserController.partialUpdateUser); // partial update, e.g., updating contest field only
+
 export default router;
