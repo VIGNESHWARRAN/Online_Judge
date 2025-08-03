@@ -54,7 +54,6 @@ export function useAuthHandler() {
 
       try {
         const encodedId = encodeURIComponent(user.sub);
-        console.log(encodedId)
         const res = await fetch(`http://localhost:5174/api/users/${encodedId}`, {credentials: "include"});
         if (res.ok) {
           const existingUser = await res.json();
