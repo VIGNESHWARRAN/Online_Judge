@@ -12,7 +12,7 @@ export async function fetchAiAssistanceEnabled() {
 }
 
 // Set AI assistance enabled flag (admin only)
-export async function setAiAssistanceEnabled(enabled) {
+export async function setAiAssistanceEnabled(enabled:boolean) {
   const res = await fetch(`${API_BASE}/enabled`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -25,7 +25,7 @@ export async function setAiAssistanceEnabled(enabled) {
 }
 
 // Generate AI hint for a problem
-export async function generateAIHint(problemDescription, codeBase) {
+export async function generateAIHint(problemDescription:Text, codeBase:Text) {
   const res = await fetch(`${API_BASE}/generate-hint`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

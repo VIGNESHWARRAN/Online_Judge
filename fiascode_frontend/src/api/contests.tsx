@@ -1,7 +1,24 @@
 
 const CONTEST_API_BASE = `http://${process.env.BACKEND_IP}/api/contests`;
+interface TestCase {
+  input: string;
+  output: string;
+}
 
-export function addContest(contestData) {
+interface Contest {
+  id: string;                      // Unique contest identifier
+  title: string;
+  description: string;
+  score: number;                   // Total score or points for the contest
+  codeBase: string;                // Code base or related info (e.g., starter code)
+  testcases: TestCase[];           // Array of test cases
+  constraintLimit: number;         // Some numeric constraint (e.g., timeout limit)
+  problems: string[];              // List of problem IDs associated with the contest
+  start?: Date | string | null;   // Optional start date/time
+  end?: Date | string | null;     // Optional end date/time
+}
+
+export function addContest(contestData: Omit<Contest, 'id'>): Promise<Contest>{
   return fetch(CONTEST_API_BASE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,7 +47,7 @@ export function readContests() {
     });
 }
 
-export function readContest(contestId) {
+export function readContest(contestId:string) {
   return fetch(`${CONTEST_API_BASE}/${contestId}`, { credentials: "include" })
     .then((res) => {
       if (!res.ok) throw new Error("Contest not found");
@@ -42,7 +59,7 @@ export function readContest(contestId) {
     });
 }
 
-export function updateContest(contestId, updatedData) {
+export function updateContest(contestId:string, updatedData: Omit<Contest, 'id'>) {
   return fetch(`${CONTEST_API_BASE}/${contestId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -59,7 +76,7 @@ export function updateContest(contestId, updatedData) {
     });
 }
 
-export function deleteContest(contestId) {
+export function deleteContest(contestId:string) {
   return fetch(`${CONTEST_API_BASE}/${contestId}`, {
     method: "DELETE",
     credentials: "include",
@@ -74,7 +91,7 @@ export function deleteContest(contestId) {
     });
 }
 
-export function registerUser(contestId, userId) {
+export function registerUser(contestId:string, userId:string) {
   return fetch(`${CONTEST_API_BASE}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -91,7 +108,7 @@ export function registerUser(contestId, userId) {
     });
 }
 
-export function unregisterUserFromContest(contestId, userId) {
+export function unregisterUserFromContest(contestId:string, userId:string) {
   return fetch(`${CONTEST_API_BASE}/unregister`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -108,7 +125,7 @@ export function unregisterUserFromContest(contestId, userId) {
     });
 }
 
-export async function addProblemToContest(contestId, problemId) {
+export async function addProblemToContest(contestId:string, problemId:string) {
   try {
     const contestRes = await fetch(`${CONTEST_API_BASE}/${contestId}`, { credentials: "include" });
     if (!contestRes.ok) throw new Error("Contest not found");

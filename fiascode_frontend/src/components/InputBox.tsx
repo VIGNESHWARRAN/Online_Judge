@@ -1,6 +1,11 @@
+import type { Dispatch, SetStateAction } from "react";
 
+interface InputBoxProps {
+  input: string;
+  setInput: Dispatch<SetStateAction<string>>;
+}
 
-export default function InputBox({ input, setInput }) {
+export default function InputBox({ input, setInput }: InputBoxProps) {
   return (
     <section className="mt-2">
       <label

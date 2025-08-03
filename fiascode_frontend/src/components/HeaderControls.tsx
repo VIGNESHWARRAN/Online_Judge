@@ -1,4 +1,12 @@
+import type { Dispatch, SetStateAction } from "react";
 
+interface HeaderControlsProps {
+  language: string;
+  setLanguage: Dispatch<SetStateAction<string>>;
+  code: string;
+  setShowLeaderboard: Dispatch<SetStateAction<boolean>>;
+  setShowContestRegister: Dispatch<SetStateAction<boolean>>;
+}
 
 export default function HeaderControls({
   language,
@@ -6,7 +14,7 @@ export default function HeaderControls({
   code,
   setShowLeaderboard,
   setShowContestRegister,
-}) {
+}: HeaderControlsProps) {
   return (
     <div className="flex items-center space-x-4">
       <select
@@ -21,11 +29,14 @@ export default function HeaderControls({
 
       <button
         onClick={() => {
-          navigator.clipboard.writeText(code).then(() => {
-            alert("Code copied to clipboard!");
-          }).catch(() => {
-            alert("Failed to copy code.");
-          });
+          navigator.clipboard
+            .writeText(code)
+            .then(() => {
+              alert("Code copied to clipboard!");
+            })
+            .catch(() => {
+              alert("Failed to copy code.");
+            });
         }}
         className="px-4 h-10 rounded bg-green-600 hover:bg-green-800 text-white"
       >

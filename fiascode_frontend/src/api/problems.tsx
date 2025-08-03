@@ -1,8 +1,24 @@
 
 const API_BASE = `http://${process.env.BACKEND_IP}/api/problems`;
+interface TestCase {
+  input: string;
+  output: string;
+}
+
+export interface Problem {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: "easy" | "medium" | "hard";
+  score: number;
+  codeBase: string;
+  testcases: TestCase[];
+  constraintLimit: number;
+  // other fields relevant to your Problem entity
+}
 
 //Create a new problem
-export function addProblem(problemData) {
+export function addProblem(problemData: Omit<Problem, "id">): Promise<Problem>{
     return fetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -18,7 +34,7 @@ export function addProblem(problemData) {
 }
 
 // Get a single problem by ID
-export function readProblem(problemId) {
+export function readProblem(problemId:string) {
     return fetch(`${API_BASE}/${problemId}`, {credentials: "include",})
         .then((res) => {
             if (!res.ok) throw new Error("Problem not found");
@@ -30,7 +46,7 @@ export function readProblem(problemId) {
 }
 
 //Get all problems
-export function readProblems() {
+export function readProblems():Promise<Problem[]> {
     return fetch(API_BASE, {credentials: "include",})
         .then((res) => {
             if (!res.ok) throw new Error("Failed to fetch problems");
@@ -42,7 +58,7 @@ export function readProblems() {
 }
 
 //Update a problem
-export function updateProblem(problemId, updatedData) {
+export function updateProblem(problemId:string, updatedData: Partial<Omit<Problem, "id">>): Promise<Problem> {
     return fetch(`${API_BASE}/${problemId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -59,7 +75,7 @@ export function updateProblem(problemId, updatedData) {
 }
 
 //Delete a problem
-export function deleteProblem(problemId) {
+export function deleteProblem(problemId:string) {
     return fetch(`${API_BASE}/${problemId}`, {
         method: "DELETE",
         credentials: "include",
