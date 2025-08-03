@@ -1,4 +1,5 @@
-const CONTEST_API_BASE = "http://localhost:5174/api/contests";
+import process from 'process';
+const CONTEST_API_BASE = `http://${process.env.BACKEND_IP}/api/contests`;
 
 export function addContest(contestData) {
   return fetch(CONTEST_API_BASE, {
