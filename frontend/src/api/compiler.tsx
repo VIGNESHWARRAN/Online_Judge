@@ -1,8 +1,8 @@
-import process from 'process';
-const COMPILER_API_BASE = `http://${process.env.BACKEND_IP}/api/compiler`;
+const COMPILER_API_BASE = "http://localhost:5174/api/compiler";
 
 // Submit code for evaluation (submission)
 export async function submitCode( lang, code, problemId, userId, contestId, userName, input = "" ) {
+  console.log(lang, code, problemId, userId, contestId, userName, input);
   const res = await fetch(`${COMPILER_API_BASE}/submit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -16,6 +16,7 @@ export async function submitCode( lang, code, problemId, userId, contestId, user
 
 // Run code without submission (for instant feedback or code execution)
 export async function runCode( lang, code, input = "" ) {
+  console.log(lang, code, input);
   const res = await fetch(`${COMPILER_API_BASE}/run`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

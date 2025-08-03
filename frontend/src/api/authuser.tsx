@@ -1,7 +1,7 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect, useState, createContext  } from "react";
 import { useNavigate, useLocation} from "react-router-dom";
-import process from 'process';
+
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -39,7 +39,7 @@ export function useAuthHandler() {
         return;
       }
       const token = await getAccessTokenSilently();
-              await fetch(`http://${process.env.BACKEND_IP}/api/auth/set-token`, {
+              await fetch("http://localhost:5174/api/auth/set-token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -54,7 +54,7 @@ export function useAuthHandler() {
 
       try {
         const encodedId = encodeURIComponent(user.sub);
-        const res = await fetch(`http://${process.env.BACKEND_IP}/api/users/${encodedId}`, {credentials: "include"});
+        const res = await fetch(`http://localhost:5174/api/users/${encodedId}`, {credentials: "include"});
         if (res.ok) {
           const existingUser = await res.json();
           setType(existingUser.type);
@@ -65,7 +65,7 @@ export function useAuthHandler() {
           navigate("/editor");
         }
         } else {
-          const createRes = await fetch(`http://${process.env.BACKEND_IP}/api/users`, {
+          const createRes = await fetch("http://localhost:5174/api/users", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",

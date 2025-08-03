@@ -1,5 +1,4 @@
-import process from 'process';
-const API_BASE = `http://${process.env.BACKEND_IP}/api/problems`;
+const API_BASE = "http://localhost:5174/api/problems";
 
 //Create a new problem
 export function addProblem(problemData) {

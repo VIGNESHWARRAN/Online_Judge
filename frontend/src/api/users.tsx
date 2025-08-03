@@ -1,5 +1,4 @@
-import process from 'process';
-const API_BASE = `http://${process.env.BACKEND_IP}/api/users`;
+const API_BASE = "http://localhost:5174/api/users";
 
 // CREATE a new user
 export function addUser(userData) {

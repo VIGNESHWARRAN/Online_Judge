@@ -1,5 +1,4 @@
-import process from 'process';
-const API_BASE = `http://${process.env.BACKEND_IP}/api/submissions`;
+const API_BASE = "http://localhost:5174/api/submissions";
 
 // Create a new submission
 export function addSubmission(submissionData) {
