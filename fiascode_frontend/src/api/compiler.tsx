@@ -1,4 +1,4 @@
-import process from 'process';
+
 const COMPILER_API_BASE = `http://${process.env.BACKEND_IP}/api/compiler`;
 
 // Submit code for evaluation (submission)

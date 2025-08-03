@@ -1,4 +1,4 @@
-import process from 'process';
+
 const CONTEST_API_BASE = `http://${process.env.BACKEND_IP}/api/contests`;
 
 export function addContest(contestData) {

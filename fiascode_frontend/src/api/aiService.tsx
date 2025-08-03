@@ -1,5 +1,4 @@
-// aiService.js
-import process from 'process';
+
 const API_BASE = `http://${process.env.BACKEND_IP}/api/ai`; // or your API base URL
 
 // Fetch current AI assistance enabled flag from backend

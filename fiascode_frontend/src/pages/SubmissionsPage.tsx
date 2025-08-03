@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { readSubmissions } from "../api/submissions"; // Adjust this path as needed
 
 interface Submission {

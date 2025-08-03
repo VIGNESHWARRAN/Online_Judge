@@ -1,4 +1,4 @@
-import process from 'process';
+
 const API_BASE = `http://${process.env.BACKEND_IP}/api/users`;
 
 // CREATE a new user

@@ -1,7 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect, useState, createContext  } from "react";
 import { useNavigate, useLocation} from "react-router-dom";
-import process from 'process';
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {

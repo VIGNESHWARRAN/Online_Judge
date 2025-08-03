@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { AuthContext } from "../api/authuser"; // adjust path as needed
 import { Navigate } from "react-router-dom";
 

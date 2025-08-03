@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import { readContests, registerUser, unregisterUserFromContest } from "../api/contests";
 import { updateUserContest } from "../api/users";
 import { AuthContext } from "../api/authuser";
