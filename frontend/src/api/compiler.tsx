@@ -1,4 +1,5 @@
-const COMPILER_API_BASE = "http://localhost:5174/api/compiler";
+import process from "process";
+const COMPILER_API_BASE = `${process.env.BACKEND_IP}/api/compiler`;
 
 // Submit code for evaluation (submission)
 export async function submitCode( lang, code, problemId, userId, contestId, userName, input = "" ) {

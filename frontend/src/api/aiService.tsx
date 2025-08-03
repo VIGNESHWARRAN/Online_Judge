@@ -1,6 +1,6 @@
 // aiService.js
-
-const API_BASE = "http://localhost:5174/api/ai"; // or your API base URL
+import process from "process";
+const API_BASE = `${process.env.BACKEND_IP}/api/ai`; // or your API base URL
 
 // Fetch current AI assistance enabled flag from backend
 export async function fetchAiAssistanceEnabled() {
