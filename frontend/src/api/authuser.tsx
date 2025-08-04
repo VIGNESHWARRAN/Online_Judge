@@ -39,7 +39,7 @@ export function useAuthHandler() {
         return;
       }
       const token = await getAccessTokenSilently();
-              await fetch(`${import.meta.env.BACKEND_IP}/api/auth/set-token`, {
+              await fetch(`${import.meta.env.VITE_BACKEND_IP}/api/auth/set-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -54,7 +54,7 @@ export function useAuthHandler() {
 
       try {
         const encodedId = encodeURIComponent(user.sub);
-        const res = await fetch(`${import.meta.env.BACKEND_IP}/api/users/${encodedId}`, {credentials: "include"});
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_IP}/api/users/${encodedId}`, {credentials: "include"});
         if (res.ok) {
           const existingUser = await res.json();
           setType(existingUser.type);

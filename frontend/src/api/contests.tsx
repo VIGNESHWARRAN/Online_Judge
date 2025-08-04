@@ -1,4 +1,4 @@
-const CONTEST_API_BASE = `${import.meta.env.BACKEND_IP}/api/contests`;
+const CONTEST_API_BASE = `${import.meta.env.VITE_BACKEND_IP}/api/contests`;
 
 export function addContest(contestData) {
   return fetch(CONTEST_API_BASE, {

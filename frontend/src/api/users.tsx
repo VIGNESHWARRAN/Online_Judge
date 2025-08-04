@@ -1,5 +1,5 @@
 
-const API_BASE = `${import.meta.env.BACKEND_IP}/api/users`;
+const API_BASE = `${import.meta.env.VITE_BACKEND_IP}/api/users`;
 
 // CREATE a new user
 export function addUser(userData) {
