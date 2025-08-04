@@ -1,5 +1,4 @@
-import process from "process";
-const CONTEST_API_BASE = `${process.env.BACKEND_IP}/api/contests`;
+const CONTEST_API_BASE = `${import.meta.env.BACKEND_IP}/api/contests`;
 
 export function addContest(contestData) {
   return fetch(CONTEST_API_BASE, {

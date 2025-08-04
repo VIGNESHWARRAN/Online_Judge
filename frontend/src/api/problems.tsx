@@ -1,5 +1,5 @@
-import process from "process";
-const API_BASE = `${process.env.BACKEND_IP}/api/problems`;
+
+const API_BASE = `${import.meta.env.BACKEND_IP}/api/problems`;
 
 //Create a new problem
 export function addProblem(problemData) {

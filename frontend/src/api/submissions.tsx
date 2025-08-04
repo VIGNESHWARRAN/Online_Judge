@@ -1,5 +1,5 @@
-import process from "process";
-const API_BASE = `${process.env.BACKEND_IP}/api/submissions`;
+
+const API_BASE = `${import.meta.env.BACKEND_IP}/api/submissions`;
 
 // Create a new submission
 export function addSubmission(submissionData) {
