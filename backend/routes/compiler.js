@@ -3,9 +3,9 @@ import fetch from 'node-fetch';
 import axios from 'axios'; 
 const router = express.Router();
 
-const API_URL = `http://${process.env.COMPILER_IP}:8080/`;
+const API_URL = `${process.env.COMPILER_IP}:8080`;
 
-const PROBLEM_API_BASE = `http:/${process.env.BACKEND_IP}:5174/api/problems`; 
+const PROBLEM_API_BASE = `${process.env.BACKEND_IP}/api/problems`; 
 
 function handleApiError(res, error, defaultMsg = "Server error") {
   console.error(error);
@@ -44,7 +44,7 @@ router.post('/submit', async (req, res) => {
     };
 
     // Send to compiler submit endpoint
-    const compilerResponse = await fetch(`${API_URL}submit`, {
+    const compilerResponse = await fetch(`${API_URL}/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(submitPayload),
@@ -69,7 +69,7 @@ router.post('/submit', async (req, res) => {
 
     // Save submission record by calling your backend submissions API
     try {
-      await axios.post("http://localhost:5174/api/submissions", {
+      await axios.post(`${process.env.BACKEND_IP}/api/submissions`, {
         problem: problemId,
         user: userId,
         contestId,
@@ -99,7 +99,7 @@ router.post('/run', async (req, res) => {
   }
 
   try {
-    const response = await fetch(`${API_URL}run`, {
+    const response = await fetch(`${API_URL}/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ format: lang, code, input }),

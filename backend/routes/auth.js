@@ -9,7 +9,7 @@ router.post('/set-token', (req, res) => {
   res.cookie('token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'none',
     maxAge: 3600 * 1000, // 1 hour
   });
 
