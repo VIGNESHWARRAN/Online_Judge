@@ -17,7 +17,6 @@ export async function submitCode( lang, code, problemId, userId, contestId, user
 
 // Run code without submission (for instant feedback or code execution)
 export async function runCode( lang, code, input = "" ) {
-  console.log(lang, code, input);
   const res = await fetch(`${COMPILER_API_BASE}/run`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -78,15 +78,13 @@ compiler.post("/submit", async (req, res) => {
       const result = await executor(filepath, inputStr);
 
       totalTime += result.time || 0;
-
+      let actualOutput = "";
       if (result.error) {
-        hasError = true;
-        failReason = "Runtime Error";
-        failOutput = result.error + (result.detail ? "\nDetails: " + result.detail : "");
-        break;
+        actualOutput = result.error;
+      } else {
+        actualOutput = (result.output || "").trim().replace(/\r\n/g, "\n");
       }
 
-      const actualOutput = (result.output || "").trim().replace(/\r\n/g, "\n");
 
       if (actualOutput !== expectedOutput) {
         hasError = true;

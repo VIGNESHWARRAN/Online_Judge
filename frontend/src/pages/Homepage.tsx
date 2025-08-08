@@ -57,11 +57,20 @@ function HomePage() {
           </h3>
           <ul className="space-y-4 text-lg leading-relaxed">
             <li>📝 You must register for a contest to start solving questions.</li>
+            <li>
+              There are two types of contests:
+              <ol className="list-decimal list-inside ml-5 mt-1">
+                <li><strong>Normal Contest</strong> — Solve standard coding problems as usual.</li>
+                <li>
+                  <strong>FIASCOde Contest</strong> — You are required to intentionally introduce a specified language-specific error within the given constraints, modifying the original codebase only as permitted.
+                </li>
+              </ol>
+            </li>
             <li>🏆 You can join <strong>only one contest at a time</strong>.</li>
-            <li>⚠️ Challenges may require you to intentionally create a specific error without changing the existing codebase over the given limit.</li>
-            <li>⏳ All modifications must be done within given constraints.</li>
-            <li>💻 FIASCOde can also be used as a normal coding platform for writing and executing code.</li>
+            <li>⚠️ Challenges may require you to create a specific intentional error <em>without altering the original codebase beyond the allowed limits</em>.</li>
+            <li>💻 FIASCOde can also be used as a normal coding platform for writing and executing code outside of contests.</li>
           </ul>
+
         </div>
       </section>
       {/* About Section */}

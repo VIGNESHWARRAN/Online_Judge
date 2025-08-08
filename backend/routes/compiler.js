@@ -16,7 +16,7 @@ function handleApiError(res, error, defaultMsg = "Server error") {
 
 // POST /submit — fetch problem testcases, forward to compiler, then save submission record here
 router.post('/submit', async (req, res) => {
-  const { lang, code, problemId, userId, contestId, userName, input = '' } = req.body;
+  const { lang, code, problemId, userId, contestId, userName, input = ''} = req.body;
 
   if (!lang || !code || !problemId) {
     return res.status(400).json({ error: "Missing required fields: 'lang', 'code', 'problemId'." });
@@ -29,7 +29,7 @@ router.post('/submit', async (req, res) => {
     }
     const problemData = await problemResponse.json();
     const testcases = problemData.testcases || [];
-
+    const score = problemData.score;
     const submitPayload = {
       format: lang,
       code,
@@ -39,6 +39,7 @@ router.post('/submit', async (req, res) => {
       userName,
       input,
       testcases,
+      score,
     };
 
     const compilerResponse = await fetch(`${API_URL}/submit`, {
@@ -54,7 +55,7 @@ router.post('/submit', async (req, res) => {
 
     const data = await compilerResponse.json();
     const submissionId = data.uuid || null;
-    const finalScore = data.finalScore ?? 0;
+    const finalScore = problemData.score || 0;
     const finalResult = data.finalResult || (data.success ? "Accepted" : "Failed");
     const totalTime = data.totalTime || null;
 
