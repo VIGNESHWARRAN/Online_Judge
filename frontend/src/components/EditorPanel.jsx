@@ -42,7 +42,6 @@ export default function EditorPanel({
         <div className="text-white font-mono">{similarityScore}%</div>
       </div>
 
-      {/* Editor takes full remaining space */}
       <div className="flex-1">
         <Editor
           height="100%"

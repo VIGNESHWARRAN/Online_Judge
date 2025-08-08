@@ -8,7 +8,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const router = express.Router();
 
-let aiAssistanceEnabled = false;
+let aiAssistanceEnabled = true; //by default enabled for showcasing
 
 router.get('/enabled', (req, res) => {
   res.json({ enabled: aiAssistanceEnabled });

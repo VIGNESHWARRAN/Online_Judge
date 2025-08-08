@@ -30,7 +30,7 @@ export default function ProblemSelector({
     setOutput("");
     setSimilarityScore(100);
     setIsSubmitDisabled(false);
-    setLanguage("py"); // or determine from problem if info available
+    setLanguage("py");
   };
 
   return (

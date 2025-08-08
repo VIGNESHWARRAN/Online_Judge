@@ -14,10 +14,9 @@ export const createContest = async (req, res) => {
 // READ ALL Contests
 export const getContests = async (req, res) => {
   try {
-    // Optionally you can populate problems field if needed
     const contests = await Contest.find()
-      .populate('problems')        // optional: populate problems
-      .populate('participants');   // optional: populate participants
+      .populate('problems')      
+      .populate('participants');  
     res.json(contests);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -65,7 +64,7 @@ export const deleteContest = async (req, res) => {
 
 // REGISTER User for Contest
 export const registerUserForContest = async (req, res) => {
-  const { contestId, userId } = req.body; // or get userId from auth middleware
+  const { contestId, userId } = req.body; 
   if (!contestId || !userId) {
     return res.status(400).json({ error: "contestId and userId are required" });
   }
@@ -74,7 +73,6 @@ export const registerUserForContest = async (req, res) => {
     const contest = await Contest.findById(contestId);
     if (!contest) return res.status(404).json({ error: "Contest not found" });
 
-    // Use $addToSet to avoid duplicates
     if (!contest.participants) contest.participants = [];
     if (contest.participants.includes(userId)) {
       return res.status(400).json({ error: "User already registered" });
@@ -83,7 +81,6 @@ export const registerUserForContest = async (req, res) => {
     contest.participants.push(userId);
     await contest.save();
 
-    // Optionally, you can update the user model's contests array as well
 
     res.json({ message: "User registered to contest successfully" });
   } catch (error) {
@@ -130,7 +127,6 @@ export const addProblemToContest = async (req, res) => {
       contest.problems = [];
     }
     
-    // Avoid duplicates
     if (contest.problems.includes(problemId)) {
       return res.status(400).json({ message: 'Problem already added to contest' });
     }

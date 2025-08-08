@@ -167,7 +167,7 @@ export default function AdminPage() {
   const handleProblemSave = async () => {
     const { title, description, score, codeBase, testcases, constraintLimit } = newProblem;
 
-    if (!title.trim() || !description.trim() || !score || !codeBase.trim() || !constraintLimit) {
+    if (!title.trim() || !description.trim() || !score) {
       setError("Fill all problem and testcase fields.");
       return;
     }
@@ -455,26 +455,76 @@ export default function AdminPage() {
 
       {/* Problem input fields */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <input
-          className="p-2 bg-zinc-900 text-white rounded"
-          placeholder="Title"
-          value={newProblem.title}
-          onChange={(e) => setNewProblem({ ...newProblem, title: e.target.value })}
-        />
-        <input
-          className="p-2 bg-zinc-900 text-white rounded"
-          placeholder="Description"
-          value={newProblem.description}
-          onChange={(e) => setNewProblem({ ...newProblem, description: e.target.value })}
-        />
-        <input
-          type="number"
-          className="p-2 bg-zinc-900 text-white rounded"
-          placeholder="Score"
-          value={newProblem.score}
-          onChange={(e) => setNewProblem({ ...newProblem, score: Number(e.target.value) })}
-        />
+        {/* Title */}
+        <div className="flex flex-col">
+          <label htmlFor="title" className="mb-1 text-white font-semibold select-none">
+            Title
+          </label>
+          <input
+            id="title"
+            type="text"
+            className="p-2 bg-zinc-900 text-white rounded placeholder-gray-400"
+            placeholder="Enter problem title"
+            value={newProblem.title}
+            onChange={(e) => setNewProblem({ ...newProblem, title: e.target.value })}
+          />
+        </div>
 
+        {/* Description */}
+        <div className="flex flex-col md:col-span-2">
+          <label htmlFor="description" className="mb-1 text-white font-semibold select-none">
+            Description
+          </label>
+          <textarea
+            id="description"
+            rows={1}
+            className="p-2 bg-zinc-900 text-white rounded resize-y placeholder-gray-400 w-full"
+            placeholder="Enter problem description"
+            value={newProblem.description}
+            onChange={(e) => {
+              // Update state
+              setNewProblem({ ...newProblem, description: e.target.value });
+            }}
+            onInput={(e) => {
+              // Auto-expand vertically
+              e.target.style.height = "auto";
+              e.target.style.height = e.target.scrollHeight + "px";
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                const { selectionStart, selectionEnd, value } = e.target;
+                const newVal = value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd);
+                setNewProblem({ ...newProblem, description: newVal });
+                setTimeout(() => {
+                  e.target.selectionStart = e.target.selectionEnd = selectionStart + 1;
+                });
+              }
+            }}
+          />
+        </div>
+
+        {/* Score */}
+        <div className="flex flex-col col-span-1 md:col-span-1">
+          <label htmlFor="score" className="mb-1 text-white font-semibold select-none">
+            Score
+          </label>
+          <input
+            id="score"
+            type="number"
+            className="p-2 bg-zinc-900 text-white rounded placeholder-gray-400 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter problem score"
+            value={newProblem.score}
+            onChange={e => setNewProblem({ ...newProblem, score: Number(e.target.value) })}
+            onWheel={e => e.currentTarget.blur()} // prevent scroll wheel change
+            min={0}
+          />
+          <small className="text-gray-400 mt-1">Points awarded for solving this problem</small>
+        </div>
+
+
+
+        {/* Code Base File Upload */}
         <div className="col-span-1 md:col-span-3">
           <label className="block mb-1 text-white">Code Base File:</label>
           <input
@@ -484,14 +534,8 @@ export default function AdminPage() {
             onChange={async (e) => {
               const file = e.target.files[0];
               if (!file) return;
-              const reader = new window.FileReader();
-              reader.onload = (ev) => {
-                setNewProblem((prev) => ({ ...prev, codeBase: ev.target.result || "" }));
-              };
-              reader.onerror = () => {
-                setError("Failed to read file.");
-              };
-              reader.readAsText(file);
+              const text = await file.text();
+              setNewProblem((prev) => ({ ...prev, codeBase: text }));
             }}
           />
           {newProblem.codeBase && (
@@ -505,27 +549,44 @@ export default function AdminPage() {
         <div className="col-span-1 md:col-span-3">
           <label className="block mb-2 font-semibold text-white">Testcases:</label>
           {newProblem.testcases.map((tc, idx) => (
-            <div key={idx} className="flex gap-2 mb-2">
-              <input
-                className="p-2 bg-zinc-900 text-white rounded flex-1"
+            <div key={idx} className="flex flex-col md:flex-row gap-2 mb-2">
+              {/* Input textarea */}
+              <textarea
+                rows={1}
+                className="p-2 bg-zinc-900 text-white rounded flex-1 resize-none"
                 placeholder={`Input ${idx + 1}`}
                 value={tc.input}
-                onChange={(e) => {
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                }}
+                onInput={(e) => {
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+
                   const testcases = [...newProblem.testcases];
                   testcases[idx].input = e.target.value;
                   setNewProblem({ ...newProblem, testcases });
                 }}
               />
-              <input
-                className="p-2 bg-zinc-900 text-white rounded flex-1"
+
+              {/* Output textarea */}
+              <textarea
+                rows={1}
+                className="p-2 bg-zinc-900 text-white rounded flex-1 resize-none"
                 placeholder={`Output ${idx + 1}`}
                 value={tc.output}
-                onChange={(e) => {
+                onKeyDown={(e) => e.stopPropagation()}
+                onInput={(e) => {
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+
                   const testcases = [...newProblem.testcases];
                   testcases[idx].output = e.target.value;
                   setNewProblem({ ...newProblem, testcases });
                 }}
               />
+
+              {/* Remove testcase button */}
               <button
                 type="button"
                 onClick={() => {
@@ -535,7 +596,7 @@ export default function AdminPage() {
                     testcases: testcases.length ? testcases : [{ input: "", output: "" }],
                   });
                 }}
-                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded self-start"
                 disabled={newProblem.testcases.length === 1}
                 title="Remove this testcase"
               >
@@ -543,9 +604,11 @@ export default function AdminPage() {
               </button>
             </div>
           ))}
+
+          {/* Add Testcase button */}
           <button
             type="button"
-            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white"
+            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white mt-2"
             onClick={() =>
               setNewProblem({
                 ...newProblem,
@@ -557,14 +620,28 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <input
-          type="number"
-          className="p-2 bg-zinc-900 text-white rounded"
-          placeholder="Constraint Limit"
-          value={newProblem.constraintLimit}
-          onChange={(e) => setNewProblem({ ...newProblem, constraintLimit: Number(e.target.value) })}
-        />
+        {/* Constraint Limit */}
+        <div className="flex flex-col col-span-1 md:col-span-1">
+          <label htmlFor="constraintLimit" className="mb-1 text-white font-semibold select-none">
+            Constraint Limit
+          </label>
+          <input
+            id="constraintLimit"
+            type="number"
+            className="p-2 bg-zinc-900 text-white rounded placeholder-gray-400 text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter constraint limit"
+            value={newProblem.constraintLimit}
+            onChange={e => setNewProblem({ ...newProblem, constraintLimit: Number(e.target.value) })}
+            onWheel={e => e.currentTarget.blur()}  // prevent scroll wheel changing value
+            min={0}
+          />
+          <small className="text-gray-400 mt-1">
+            Minimum allowed similarity in percentage
+          </small>
+        </div>
 
+
+        {/* Save Problem button */}
         <button
           onClick={handleProblemSave}
           className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white col-span-1 md:col-span-3"
@@ -572,6 +649,7 @@ export default function AdminPage() {
           {editProblemId ? "Update Problem" : "Add Problem"}
         </button>
       </div>
+
 
       {/* Assign Problems to Contests Section */}
       <section className="mb-8">
@@ -622,9 +700,9 @@ export default function AdminPage() {
                 }
                 onClick={() => handleAssignProblemToContests(problem.id)}
                 className={`ml-0 md:ml-4 mt-3 md:mt-0 bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white ${!problemContestSelections[problem.id] ||
-                    problemContestSelections[problem.id].size === 0
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
+                  problemContestSelections[problem.id].size === 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
                   }`}
               >
                 Assign Selected Contests

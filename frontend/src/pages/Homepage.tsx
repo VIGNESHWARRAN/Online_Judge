@@ -1,5 +1,6 @@
-import React, {useContext} from "react";
+import React, { useContext } from "react";
 import { AuthContext } from "../api/authuser";
+
 function HomePage() {
   const {
     isAuthenticated,
@@ -18,6 +19,7 @@ function HomePage() {
     <div className="min-h-screen bg-black text-white flex flex-col font-sans relative overflow-x-hidden">
       {error && <p className="text-red-500 text-center">Error: {error.message}</p>}
 
+      {/* Hero Section */}
       <main className="mb-4 relative flex-grow flex flex-col justify-center items-center text-center px-6 py-24 rounded-t-3xl rounded-b-3xl bg-indigo-700 shadow-inner">
         <div className="absolute inset-0 opacity-20 -z-10 bg-gradient-to-br from-indigo-500 via-indigo-700 to-purple-800"></div>
 
@@ -44,6 +46,25 @@ function HomePage() {
         </div>
       </main>
 
+      {/* Instructions Section */}
+      <section
+        id="instructions"
+        className="bg-white text-gray-800 py-20 px-6 relative z-10 rounded-t-3xl rounded-b-3xl shadow-inner"
+      >
+        <div className="max-w-4xl mx-auto">
+          <h3 className="text-3xl font-extrabold mb-6 text-center">
+            Rules & How It Works
+          </h3>
+          <ul className="space-y-4 text-lg leading-relaxed">
+            <li>📝 You must register for a contest to start solving questions.</li>
+            <li>🏆 You can join <strong>only one contest at a time</strong>.</li>
+            <li>⚠️ Challenges may require you to intentionally create a specific error without changing the existing codebase over the given limit.</li>
+            <li>⏳ All modifications must be done within given constraints.</li>
+            <li>💻 FIASCOde can also be used as a normal coding platform for writing and executing code.</li>
+          </ul>
+        </div>
+      </section>
+      {/* About Section */}
       <section
         id="about"
         className="bg-white text-gray-800 py-20 px-6 relative z-10 rounded-t-3xl rounded-b-3xl shadow-inner"
@@ -51,11 +72,11 @@ function HomePage() {
         <div className="max-w-4xl mx-auto text-center">
           <h3 className="text-3xl font-extrabold mb-4">Why FIASCOde?</h3>
           <p className="text-gray-600 text-lg leading-relaxed">
-            Helps you sharpen your debugging skills. <span className="text-indigo-600 font-semibold">FIASCOde</span> provides real-time judge feedback, AI suggestions, and performance insights.
+            Helps you understand errors better than before. <span className="text-indigo-600 font-semibold">FIASCOde</span> provides real-time judge feedback, AI suggestions, and performance insights.
           </p>
         </div>
       </section>
-
+      {/* Footer */}
       <footer className="text-center py-6 bg-gray-900 text-gray-400 text-sm">
         &copy; {new Date().getFullYear()} FIASCOde. All rights reserved.
       </footer>

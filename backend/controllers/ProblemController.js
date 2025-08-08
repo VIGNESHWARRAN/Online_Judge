@@ -24,7 +24,7 @@ export const getProblems = async (req, res) => {
 // READ ONE by Custom `id` Field
 export const getProblemById = async (req, res) => {
   try {
-    const problem = await Problem.findOne({ id: req.params.id }); // 🔄 Changed from findById
+    const problem = await Problem.findOne({ id: req.params.id });
     if (!problem) return res.status(404).json({ error: "Problem not found" });
     res.json(problem);
   } catch (error) {

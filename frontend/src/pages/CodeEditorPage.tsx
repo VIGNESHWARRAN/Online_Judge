@@ -210,7 +210,7 @@ export default function CodeEditorPage() {
       const response = await runCode(lang, code, input);
       setOutput(response.output || response.error || "Unknown error");
     } catch (error) {
-      setOutput("Run failed."+(error.message || error.toString()));
+      setOutput("Run failed." + (error.message || error.toString()));
       console.error(error);
     }
   };
@@ -243,14 +243,14 @@ export default function CodeEditorPage() {
     );
   }
   if (showSubmissions) {
-  return (
-    <SubmissionsPage
-      userId={userId}
-      problems={problems}
-      onBack={() => setSubmissions(false)}
-    />
-  );
-}
+    return (
+      <SubmissionsPage
+        userId={userId}
+        problems={problems}
+        onBack={() => setSubmissions(false)}
+      />
+    );
+  }
 
 
   // *** NEW UI STYLING (only a layout change, feature parity remains) ***
@@ -258,6 +258,7 @@ export default function CodeEditorPage() {
     <div className="flex h-screen bg-gradient-to-br from-[#1e202f] to-[#2c2d40] text-white font-sans">
       {/* Left Pane */}
       <div className="w-1/2 flex flex-col p-6 overflow-y-auto space-y-6">
+
         <HeaderControls
           language={language}
           setLanguage={setLanguage}
@@ -267,6 +268,7 @@ export default function CodeEditorPage() {
           setShowLeaderboard={setShowLeaderboard}
           setShowContestRegister={setShowContestRegister}
         />
+
         <ProblemSelector
           problems={filteredProblems}
           selectedIndex={selectedIndex}
@@ -278,8 +280,10 @@ export default function CodeEditorPage() {
           setIsSubmitDisabled={setIsSubmitDisabled}
           setLanguage={setLanguage}
         />
+
         {selectedIndex !== null && filteredProblems[selectedIndex] ? (
           <div className="mt-6">
+            {/* ProblemDetails spans full width */}
             <ProblemDetails problem={filteredProblems[selectedIndex]} />
           </div>
         ) : (
@@ -287,35 +291,49 @@ export default function CodeEditorPage() {
             Please select a problem to see details
           </p>
         )}
-        {/* AI Hint UI remains, only visible if aiEnabled */}
+
+        {/* Group smaller controls in a horizontal flex container */}
         {aiEnabled && selectedIndex !== null && (
-          <div className="mb-4 p-3 bg-indigo-900 rounded space-y-2">
+          <div className="flex items-center space-x-3 mb-4 max-w-md">
             <button
               onClick={handleGenerateAIHint}
               disabled={aiLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded px-4 py-2 inline-flex items-center"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded px-3 py-1.5 text-sm inline-flex items-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Get minimal AI hint"
             >
               {aiLoading ? "Generating hint..." : "💡 Get hint"}
             </button>
-            {aiHint && (
-              <pre className="bg-zinc-800 rounded p-3 max-h-48 overflow-auto whitespace-pre-wrap text-sm">
-                {aiHint}
-              </pre>
-            )}
+            {/* Optional: if hint shown, place it below this container to keep layout clean */}
           </div>
         )}
-        <OutputConsole output={output} />
-        <button
-          onClick={() => setSubmissions(true)}
-          className="px-4 h-10 bg-green-600 rounded text-white hover:bg-green-700"
-        >
-          Submissions
-        </button>
 
-        <InputBox input={input} setInput={setInput} />
+        {/* Output Console: make it expand and wide */}
+        <div className="mb-6 max-w-full max-h-64 overflow-auto rounded bg-zinc-900 p-4 text-sm font-mono text-white">
+          <OutputConsole output={output} />
+        </div>
+
+        {/* Horizontal container for InputBox and Submissions button */}
+        <div className="flex items-center space-x-4">
+          <InputBox input={input} setInput={setInput} className="flex-1 max-w-xs" />
+
+          <button
+            onClick={() => setSubmissions(true)}
+            className="px-4 h-10 bg-green-600 rounded text-white hover:bg-green-700 text-sm min-w-[100px]"
+          >
+            Submissions
+          </button>
+        </div>
+
+        {/* AI hint text preview placed below the button and other inputs */}
+        {aiEnabled && selectedIndex !== null && aiHint && (
+          <pre className="bg-zinc-800 rounded p-3 max-h-48 overflow-auto whitespace-pre-wrap text-sm mt-2 max-w-md">
+            {aiHint}
+          </pre>
+        )}
+
       </div>
-      {/* Right Pane */}
+
+      {/* Right Panel */}
       <div className="w-1/2 flex flex-col p-6 h-full">
         <EditorPanel
           code={code}

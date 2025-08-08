@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 import axios from 'axios'; 
 const router = express.Router();
 
-const API_URL = `${process.env.COMPILER_IP}:8080`;
+const API_URL = `${process.env.COMPILER_IP}`;
 
 const PROBLEM_API_BASE = `${process.env.BACKEND_IP}/api/problems`; 
 
@@ -23,7 +23,6 @@ router.post('/submit', async (req, res) => {
   }
 
   try {
-    // Fetch problem details including testcases
     const problemResponse = await fetch(`${PROBLEM_API_BASE}/${problemId}`);
     if (!problemResponse.ok) {
       return res.status(502).json({ error: "Failed to fetch problem details" });
@@ -31,7 +30,6 @@ router.post('/submit', async (req, res) => {
     const problemData = await problemResponse.json();
     const testcases = problemData.testcases || [];
 
-    // Compose payload for compiler API call
     const submitPayload = {
       format: lang,
       code,
@@ -40,10 +38,9 @@ router.post('/submit', async (req, res) => {
       contestId,
       userName,
       input,
-      testcases, // send testcases for compiler to run
+      testcases,
     };
 
-    // Send to compiler submit endpoint
     const compilerResponse = await fetch(`${API_URL}/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,11 +60,9 @@ router.post('/submit', async (req, res) => {
 
     if (!submissionId) {
       console.warn("No submissionId returned from compiler API; skipping submission record save.");
-      // Return compiler response anyway
       return res.json(data);
     }
 
-    // Save submission record by calling your backend submissions API
     try {
       await axios.post(`${process.env.BACKEND_IP}/api/submissions`, {
         problem: problemId,
@@ -90,7 +85,7 @@ router.post('/submit', async (req, res) => {
   }
 });
 
-// /run endpoint (no changes)
+// /run 
 router.post('/run', async (req, res) => {
   const { lang, code, input = '' } = req.body;
 

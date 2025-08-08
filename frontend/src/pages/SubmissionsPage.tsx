@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { readSubmissions } from "../api/submissions"; // Adjust this path as needed
+import { readSubmissions } from "../api/submissions";
 
 interface Submission {
   submissionId: string;
-  problem: string;        // problem id (to match with title etc)
+  problem: string;      
   user: string;
   username: string;
   contestId?: string | null;
@@ -11,13 +11,13 @@ interface Submission {
   result: 'Accepted' | 'Wrong Answer' | 'Pending' | 'Judging';
   time?: number;
   memory?: number;
-  submittedAt: string;    // ISO timestamp, from Mongoose schema
+  submittedAt: string;   
 }
 
 interface UserSubmissionsPageProps {
   userId: string;
-  problems: Array<{ id: string; title: string }>; // List of all problems
-  onBack?: () => void;                            // Optional back handler
+  problems: Array<{ id: string; title: string }>; 
+  onBack?: () => void;                     
 }
 
 export default function SubmissionsPage({ userId, problems, onBack }: UserSubmissionsPageProps) {
@@ -32,9 +32,7 @@ export default function SubmissionsPage({ userId, problems, onBack }: UserSubmis
     setLoading(true);
     readSubmissions()
       .then((allSubs: Submission[]) => {
-        // Only submissions for this user
         const userSubs = (allSubs || []).filter(sub => sub.user === userId);
-        // Sort with latest first
         userSubs.sort(
           (a, b) =>
             new Date(b.submittedAt || 0).getTime() -
