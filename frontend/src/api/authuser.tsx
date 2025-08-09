@@ -65,7 +65,7 @@ export function useAuthHandler() {
           navigate("/editor");
         }
         } else {
-          const createRes = await fetch(`${import.meta.env.BACKEND_IP}/api/users`, {
+          const createRes = await fetch(`${import.meta.env.VITE_BACKEND_IP}/api/users`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
