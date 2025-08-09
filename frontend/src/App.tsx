@@ -4,8 +4,22 @@ import AdminPage from "./pages/AdminPage";
 import CodeEditorPage from "./pages/CodeEditorPage";
 import { RequireAuth } from "./components/RequireAuth";
 import { AuthProvider } from "./api/authuser";
+import { useEffect } from "react";
+
+function useKeepAlivePing() {
+  useEffect(() => {
+    const pingInterval = setInterval(() => {
+      fetch(`${import.meta.env.VITE_BACKEND_IP}`)
+        .then(res => console.log("Ping sent:", res.status))
+        .catch(err => console.error("Ping failed:", err));
+    }, 10 * 60 * 1000); // every 10 minutes
+
+    return () => clearInterval(pingInterval);
+  }, []);
+}
 
 function App() {
+  useKeepAlivePing();
   return (
     <BrowserRouter>
       <AuthProvider>
