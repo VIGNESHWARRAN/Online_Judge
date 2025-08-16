@@ -1,11 +1,11 @@
 import express from 'express';
 import fetch from 'node-fetch';
-import axios from 'axios'; 
+import axios from 'axios';
 const router = express.Router();
 
 const API_URL = `${process.env.COMPILER_IP}`;
 
-const PROBLEM_API_BASE = `${process.env.BACKEND_IP}/api/problems`; 
+const PROBLEM_API_BASE = `${process.env.BACKEND_IP}/api/problems`;
 
 function handleApiError(res, error, defaultMsg = "Server error") {
   console.error(error);
@@ -16,8 +16,7 @@ function handleApiError(res, error, defaultMsg = "Server error") {
 
 // POST /submit — fetch problem testcases, forward to compiler, then save submission record here
 router.post('/submit', async (req, res) => {
-  const { lang, code, problemId, userId, contestId, userName, input = ''} = req.body;
-
+  const { lang, code, problemId, userId, contestId, userName, input = '' } = req.body;
   if (!lang || !code || !problemId) {
     return res.status(400).json({ error: "Missing required fields: 'lang', 'code', 'problemId'." });
   }
@@ -56,7 +55,7 @@ router.post('/submit', async (req, res) => {
     const data = await compilerResponse.json();
     const submissionId = data.uuid || null;
     const finalScore = problemData.score || 0;
-    const finalResult = data.finalResult || (data.success ? "Accepted" : "Failed");
+    const finalResult = (data.output ? "Accepted" : "Wrong Answer");
     const totalTime = data.totalTime || null;
 
     if (!submissionId) {
@@ -71,11 +70,12 @@ router.post('/submit', async (req, res) => {
         contestId,
         submissionId,
         username: userName,
-        score: finalScore,
+        score: String(finalResult).trim().toLowerCase() === "accepted" ? finalScore : 0,
         result: finalResult,
         time: totalTime,
-        memory: null, 
+        memory: null,
       });
+
     } catch (submissionSaveError) {
       console.error("Error saving submission record:", submissionSaveError);
     }

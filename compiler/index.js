@@ -102,7 +102,7 @@ compiler.post("/submit", async (req, res) => {
       : "Accepted";
 
     // Since the compiler does not fetch the problem’s score here, you can send 0 or handle it upstream
-    const finalScore = finalResult === "Accepted" ? 0 : 0;
+    const finalScore = 0;
 
     // Save output log **only for submissions**
     const outputFilePath = path.join(outputPath, `${uuid}.out`);
@@ -119,8 +119,6 @@ compiler.post("/submit", async (req, res) => {
     } catch (cleanupErr) {
       console.error("Error deleting temp source file:", cleanupErr);
     }
-
-    // Respond with the result only; NO submission API call here
     if (hasError) {
       return res.json({ success: false, error: finalResult, detail: failOutput, uuid, totalTime, finalScore, finalResult });
     } else {

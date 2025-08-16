@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/Homepage";
 import AdminPage from "./pages/AdminPage";
-import CodeEditorPage from "./pages/CodeEditorPage";
+import EditorWrapper from "./components/CCWrapper";
 import { RequireAuth } from "./components/RequireAuth";
 import { AuthProvider } from "./api/authuser";
 import { useEffect } from "react";
@@ -42,7 +42,7 @@ function App() {
             path="/editor"
             element={
               <RequireAuth allowedTypes={["user", "admin"]}>
-                <CodeEditorPage />
+                <EditorWrapper />
               </RequireAuth>
             }
           />

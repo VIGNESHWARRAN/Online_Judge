@@ -47,6 +47,8 @@ function diceCoefficient(str1: string, str2: string): number {
 }
 
 export default function CodeEditorPage() {
+
+  const [fiascode, setFiascode] = useState<boolean>(true);
   const { user } = useContext(AuthContext);
   const userId = user?.sub || "";
   const userName = user?.name || "";
@@ -54,6 +56,7 @@ export default function CodeEditorPage() {
   const [problems, setProblems] = useState<any[]>([]);
   const [contests, setContests] = useState<any[]>([]);
   const [userContestId, setUserContestId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [code, setCode] = useState<string>("");
@@ -148,11 +151,13 @@ export default function CodeEditorPage() {
       setOutput("");
       setCodeInitialized(true);
       setAiHint("");
+      setFiascode(false);
       return;
     }
     if (!codeInitialized) {
+      const firstProblemCode = filteredProblems[0].codeBase || "";
       setSelectedIndex(0);
-      setCode(filteredProblems[0].codeBase || "");
+      setCode(firstProblemCode);
       setSimilarityScore(100);
       setIsSubmitDisabled(false);
       setLanguage("py");
@@ -160,8 +165,10 @@ export default function CodeEditorPage() {
       setOutput("");
       setCodeInitialized(true);
       setAiHint("");
+      setFiascode(firstProblemCode.trim() !== "");
     }
   }, [filteredProblems, codeInitialized]);
+
 
   // Similarity / submit enabled logic
   useEffect(() => {
@@ -252,37 +259,75 @@ export default function CodeEditorPage() {
     );
   }
 
-
   // *** NEW UI STYLING (only a layout change, feature parity remains) ***
   return (
-    <div className="flex h-screen bg-gradient-to-br from-[#1e202f] to-[#2c2d40] text-white font-sans">
-      {/* Left Pane */}
-      <div className="w-1/2 flex flex-col p-6 overflow-y-auto space-y-6">
+    <div className="flex h-screen relative bg-gradient-to-br from-[#1e202f] to-[#2c2d40] text-white font-sans">
 
-        <HeaderControls
-          language={language}
-          setLanguage={setLanguage}
-          code={filteredProblems[selectedIndex]?.codeBase || ""}
-          problems={filteredProblems}
-          selectedIndex={selectedIndex}
-          setShowLeaderboard={setShowLeaderboard}
-          setShowContestRegister={setShowContestRegister}
+      {/* Sidebar backdrop to close on mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-40"
+          onClick={() => setSidebarOpen(false)}
         />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 z-50 w-120 h-full bg-zinc-900 shadow-2xl rounded-r-lg flex flex-col
+        transform transition-transform duration-300 
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        {/* Optional close button visible only on mobile */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700 bg-zinc-800 md:hidden">
+          <h2 className="text-lg font-bold text-white">Problems</h2>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close Problem List"
+            className="text-white hover:text-red-400 text-2xl"
+          >
+            ✖
+          </button>
+        </div>
 
         <ProblemSelector
           problems={filteredProblems}
           selectedIndex={selectedIndex}
-          setSelectedIndex={setSelectedIndex}
+          setSelectedIndex={(idx) => {
+            setSelectedIndex(idx);
+            setSidebarOpen(false);
+            if (window.innerWidth < 768) {
+              setSidebarOpen(false);
+            }
+          }}
           setCode={setCode}
           setInput={setInput}
           setOutput={setOutput}
           setSimilarityScore={setSimilarityScore}
           setIsSubmitDisabled={setIsSubmitDisabled}
           setLanguage={setLanguage}
+          fiascode = {fiascode}
+        />
+      </aside>
+
+      {/* Left Pane */}
+      <div className="w-1/2 flex flex-col p-6 overflow-y-auto space-y-6">
+        <HeaderControls
+          language={language}
+          setLanguage={setLanguage}
+          code={code}
+          setCode={setCode}
+          fiascode={fiascode}
+          problems={filteredProblems}
+          selectedIndex={selectedIndex}
+          setShowLeaderboard={setShowLeaderboard}
+          setShowContestRegister={setShowContestRegister}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
         />
 
+
         {selectedIndex !== null && filteredProblems[selectedIndex] ? (
-          <div className="mt-6">
+          <div className="mt-6 h-[60%]">
             {/* ProblemDetails spans full width */}
             <ProblemDetails problem={filteredProblems[selectedIndex]} />
           </div>
@@ -292,45 +337,39 @@ export default function CodeEditorPage() {
           </p>
         )}
 
-        {/* Group smaller controls in a horizontal flex container */}
-        {aiEnabled && selectedIndex !== null && (
-          <div className="flex items-center space-x-3 mb-4 max-w-md">
-            <button
-              onClick={handleGenerateAIHint}
-              disabled={aiLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white rounded px-3 py-1.5 text-sm inline-flex items-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Get minimal AI hint"
-            >
-              {aiLoading ? "Generating hint..." : "💡 Get hint"}
-            </button>
-            {/* Optional: if hint shown, place it below this container to keep layout clean */}
-          </div>
-        )}
-
-        {/* Output Console: make it expand and wide */}
-        <div className="mb-6 max-w-full max-h-64 overflow-auto rounded bg-zinc-900 p-4 text-sm font-mono text-white">
-          <OutputConsole output={output} />
-        </div>
-
-        {/* Horizontal container for InputBox and Submissions button */}
-        <div className="flex items-center space-x-4">
-          <InputBox input={input} setInput={setInput} className="flex-1 max-w-xs" />
+        {/* Controls and Submissions button container */}
+        <div className="flex items-center justify-between mb-2 w-[100%]">
+          <button
+            onClick={handleGenerateAIHint}
+            disabled={aiLoading}
+            className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded px-3 py-1.5 text-sm inline-flex items-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Get minimal AI hint"
+          >
+            {aiLoading ? "Generating hint..." : "💡 Get hint"}
+          </button>
 
           <button
             onClick={() => setSubmissions(true)}
-            className="px-4 h-10 bg-green-600 rounded text-white hover:bg-green-700 text-sm min-w-[100px]"
+            className="cursor-pointer px-3 h-12 bg-green-600 rounded text-white hover:bg-green-700 text-sm"
           >
             Submissions
           </button>
         </div>
 
-        {/* AI hint text preview placed below the button and other inputs */}
+        {/* AI hint text preview below the buttons */}
         {aiEnabled && selectedIndex !== null && aiHint && (
-          <pre className="bg-zinc-800 rounded p-3 max-h-48 overflow-auto whitespace-pre-wrap text-sm mt-2 max-w-md">
+          <pre className="bg-zinc-800 rounded p-3 max-h-48 overflow-auto whitespace-pre-wrap text-sm max-w-[100%]">
             {aiHint}
           </pre>
         )}
-
+        {/* Horizontal container for InputBox*/}
+        <div className="flex items-center space-x-4 relative">
+          <InputBox input={input} setInput={setInput} className="flex-1 max-w-md" />
+        </div>
+        {/* Output Console: make it expand and wide */}
+        <div className="mb-6 max-w-full max-h-64 overflow-auto rounded bg-zinc-900 text-sm font-mono text-white">
+          <OutputConsole output={output} />
+        </div>
       </div>
 
       {/* Right Panel */}
@@ -343,8 +382,10 @@ export default function CodeEditorPage() {
           isSubmitDisabled={isSubmitDisabled}
           runHandler={handleRun}
           submitHandler={handleSubmit}
+          fiascode={fiascode}
         />
       </div>
     </div>
   );
+
 }

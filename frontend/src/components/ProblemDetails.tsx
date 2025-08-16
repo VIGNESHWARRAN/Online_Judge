@@ -10,7 +10,7 @@ export default function ProblemDetails({ problem }) {
   }
 
   return (
-    <section className="bg-gray-800 p-4 rounded-md shadow-md overflow-auto max-h-72">
+    <section className="bg-gray-800 p-4 rounded-md shadow-md overflow-auto max-h-[100%]">
       <h2 className="text-lg font-semibold mb-3">{problem.title}</h2>
       <p className="mb-4 text-sm whitespace-pre-wrap">
         {problem.description.replace(/\\n/g, "\n")}

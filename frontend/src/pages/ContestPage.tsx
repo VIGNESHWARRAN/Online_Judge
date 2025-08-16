@@ -37,12 +37,10 @@ export default function ContestRegisterPage() {
     try {
       await registerUser(contestId, userId);
       await updateUserContest(userId, contestId);
-      setUserContests((prev) => [...prev, contestId]);
+      setUserContests([contestId]); // ✅ allow only 1 contest at a time
       setMessage("Successfully registered for the contest!");
-      alert("Successfully registered for the contest!");
     } catch (err) {
       setMessage("Registration failed. Please try again.");
-      alert("Registration failed!");
       console.error(err);
     } finally {
       setLoading(false);
@@ -55,12 +53,10 @@ export default function ContestRegisterPage() {
     try {
       await unregisterUserFromContest(contestId, userId);
       await updateUserContest(userId, null);
-      setUserContests((prev) => prev.filter((id) => id !== contestId));
+      setUserContests([]); // ✅ clear all registrations
       setMessage("Successfully unregistered from the contest!");
-      alert("Successfully unregistered from the contest!");
     } catch (err) {
       setMessage("Unregistration failed. Please try again.");
-      alert("Unregistration failed!");
       console.error(err);
     } finally {
       setLoading(false);
@@ -72,7 +68,7 @@ export default function ContestRegisterPage() {
   return (
     <RequireAuth allowedTypes={[]}>
       <div className="min-h-screen bg-gradient-to-br from-[#1e202f] to-[#2c2d40] p-8 text-white font-sans flex flex-col">
-        {/* Top bar with back button and title */}
+        {/* Top bar */}
         <div className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
           <button
             onClick={() => window.history.back()}
@@ -95,9 +91,12 @@ export default function ContestRegisterPage() {
           <h1 className="text-4xl font-bold text-center flex-grow text-indigo-400">
             Contest Registration
           </h1>
-          {/* Empty placeholder to balance flex */}
           <div style={{ width: 120 }} />
         </div>
+
+        <p className="text-center text-yellow-400 font-semibold mb-6 max-w-4xl mx-auto w-full select-none">
+          Must register to start attending questions. Register for only one contest at a time.
+        </p>
 
         {message && (
           <p className="mb-6 max-w-4xl mx-auto w-full text-center text-green-400 font-semibold select-none">
@@ -152,10 +151,10 @@ export default function ContestRegisterPage() {
                       {!ended && !registered && (
                         <button
                           onClick={() => handleRegister(cid)}
-                          disabled={loading}
+                          disabled={loading || userContests.length > 0} // ✅ Disable if already registered elsewhere
                           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition"
                         >
-                          Register
+                          {userContests.length > 0 ? "Already in a contest" : "Register"}
                         </button>
                       )}
                     </div>
