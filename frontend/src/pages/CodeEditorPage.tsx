@@ -314,7 +314,7 @@ return (
     </aside>
 
     {/* Left Pane */}
-    <div className="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto space-y-6">
+    <div className="flex-[0.50] flex flex-col p-4 md:p-6 overflow-y-auto space-y-6">
       <HeaderControls
         language={language}
         setLanguage={setLanguage}
@@ -378,7 +378,7 @@ return (
     </div>
 
     {/* Right Panel */}
-    <div className="flex-1 flex flex-col p-4 md:p-6 h-full">
+    <div className="flex-[0.5] flex flex-col p-4 md:p-6 h-full">
       <EditorPanel
         code={code}
         setCode={setCode}

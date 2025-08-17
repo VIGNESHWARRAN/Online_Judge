@@ -45,7 +45,7 @@ export default function HeaderControls({
             setSidebarOpen((prev) => !prev)
           )
         }
-        className="flex-1 min-w-[15%] py-2 bg-indigo-700 rounded text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="cursor-pointer flex-1 min-w-[15%] py-2 bg-indigo-700 rounded text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
       >
         Problems
       </button>
@@ -54,7 +54,7 @@ export default function HeaderControls({
       <select
         value={language}
         onChange={handleLanguageChange}
-        className="flex-1 min-w-[15%] py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 text-center"
+        className="cursor-pointer flex-1 min-w-[15%] py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 text-center"
       >
         <option value="py">Python</option>
         <option value="java">Java</option>
@@ -69,7 +69,7 @@ export default function HeaderControls({
               navigator.clipboard.writeText(OGcode);
             })
           }
-          className="flex-1 min-w-[15%] py-2 bg-green-600 rounded text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="cursor-pointer flex-1 min-w-[15%] py-2 bg-green-600 rounded text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-400"
         >
           Copy Code
         </button>
@@ -80,7 +80,7 @@ export default function HeaderControls({
         onClick={() =>
           handleClickWithFeedback("register", () => setShowContestRegister(true))
         }
-        className="flex-1 min-w-[20%] py-2 bg-teal-600 rounded text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400"
+        className="cursor-pointer flex-1 min-w-[20%] py-2 bg-teal-600 rounded text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400"
       >
         Register Contests 
       </button>
@@ -90,7 +90,7 @@ export default function HeaderControls({
         onClick={() =>
           handleClickWithFeedback("leaderboard", () => setShowLeaderboard(true))
         }
-        className="flex-1 min-w-[15%] py-2 bg-green-600 rounded text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
+        className="cursor-pointer flex-1 min-w-[15%] py-2 bg-green-600 rounded text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
       >
         Leaderboard
       </button>
