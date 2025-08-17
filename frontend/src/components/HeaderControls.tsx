@@ -4,6 +4,7 @@ export default function HeaderControls({
   language,
   setLanguage,
   code,
+  OGcode,
   setCode,
   fiascode,
   setShowLeaderboard,
@@ -18,10 +19,6 @@ export default function HeaderControls({
     setTimeout(() => setClickedButton(null), 500);
   };
 
-  const getButtonClass = (key, baseClasses) => {
-    return `${baseClasses} ${clickedButton === key ? "bg-yellow-500" : ""}`;
-  };
-
   const languageBoilerplates = {
     py: "# Write your Python code here\n",
     java: `public class Main {\n  public static void main(String[] args) {\n    // Write your Java code here\n  }\n}\n`,
@@ -33,7 +30,6 @@ export default function HeaderControls({
     handleClickWithFeedback("language", () => {
       setLanguage(newLang);
 
-      // If fiascode is false, replace code with boilerplate on language change
       if (fiascode === false) {
         setCode(languageBoilerplates[newLang] || "");
       }
@@ -41,14 +37,15 @@ export default function HeaderControls({
   };
 
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex flex-wrap items-center justify-between gap-2 w-full">
       {/* Problems toggle button */}
       <button
         onClick={() =>
-          handleClickWithFeedback("problems", () => setSidebarOpen((prev) => !prev))
+          handleClickWithFeedback("problems", () =>
+            setSidebarOpen((prev) => !prev)
+          )
         }
-        className="cursor-pointer px-4 h-10 bg-indigo-700 rounded text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-        aria-label="Toggle Problem List"
+        className="flex-1 min-w-[15%] py-2 bg-indigo-700 rounded text-white hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
       >
         Problems
       </button>
@@ -57,8 +54,7 @@ export default function HeaderControls({
       <select
         value={language}
         onChange={handleLanguageChange}
-        className="cursor-pointer w-36 px-4 h-10 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
-        aria-label="Select language"
+        className="flex-1 min-w-[15%] py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-600 text-center"
       >
         <option value="py">Python</option>
         <option value="java">Java</option>
@@ -70,10 +66,10 @@ export default function HeaderControls({
         <button
           onClick={() =>
             handleClickWithFeedback("copyCode", () => {
-              navigator.clipboard.writeText(code);
+              navigator.clipboard.writeText(OGcode);
             })
           }
-          className="cursor-pointer px-4 h-10 rounded bg-green-600 hover:bg-green-800 text-white focus:outline-none focus:ring-2 focus:ring-green-400"
+          className="flex-1 min-w-[15%] py-2 bg-green-600 rounded text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-400"
         >
           Copy Code
         </button>
@@ -84,9 +80,9 @@ export default function HeaderControls({
         onClick={() =>
           handleClickWithFeedback("register", () => setShowContestRegister(true))
         }
-        className="cursor-pointer px-4 h-10 bg-teal-600 rounded text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400"
+        className="flex-1 min-w-[20%] py-2 bg-teal-600 rounded text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-400"
       >
-        Register for Contests
+        Register Contests 
       </button>
 
       {/* Leaderboard button */}
@@ -94,7 +90,7 @@ export default function HeaderControls({
         onClick={() =>
           handleClickWithFeedback("leaderboard", () => setShowLeaderboard(true))
         }
-        className="cursor-pointer px-4 h-10 bg-green-600 rounded text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
+        className="flex-1 min-w-[15%] py-2 bg-green-600 rounded text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400"
       >
         Leaderboard
       </button>

@@ -21,7 +21,7 @@ export default function EditorPanel({
   const getButtonClass = (key, baseClasses, disabled) => {
     let classes = baseClasses;
     if (disabled) {
-      classes += " bg-gray-600 cursor-not-allowed";
+      return "flex-1 rounded py-3 font-semibold text-white bg-gray-600 cursor-not-allowed opacity-60";
     } else if (clickedButton === key) {
       classes = classes
         .replace(/bg-blue-600/, "bg-yellow-400")
