@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
-import bcrypt from "bcryptjs";
 import "react-datepicker/dist/react-datepicker.css";
 import { setAiAssistanceEnabled, fetchAiAssistanceEnabled } from "../api/aiService";
 import {
