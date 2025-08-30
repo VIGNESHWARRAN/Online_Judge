@@ -13,6 +13,7 @@ import LeaderboardPage from "./Leaderboard";
 import ContestRegisterPage from "./ContestPage";
 import SubmissionsPage from "./SubmissionsPage";
 import { submitCode, runCode } from "../api/compiler";
+import { useContestSession } from "../api/CreateSessionContext";
 
 import {
   fetchAiAssistanceEnabled,
@@ -52,7 +53,7 @@ export default function CodeEditorPage() {
   const { user } = useContext(AuthContext);
   const userId = user?.sub || "";
   const userName = user?.name || "";
-  
+
   const [problems, setProblems] = useState<any[]>([]);
   const [contests, setContests] = useState<any[]>([]);
   const [userContestId, setUserContestId] = useState<string | null>(null);
@@ -74,6 +75,14 @@ export default function CodeEditorPage() {
 
   const [codeInitialized, setCodeInitialized] = useState<boolean>(false);
 
+  const { timeLeft } = useContestSession();
+
+  const formatTime = (): string => {
+    if (timeLeft === null) return "";
+    const mins = Math.floor(timeLeft / 60);
+    const secs = timeLeft % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
   // AI Assistance hooks
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -92,7 +101,6 @@ export default function CodeEditorPage() {
       }
     })();
   }, [userId]);
-
   // Data fetch
   useEffect(() => {
     if (!userId) return;
@@ -195,6 +203,10 @@ export default function CodeEditorPage() {
       alert("Please select a problem before submitting.");
       return;
     }
+    if (/\braise\b/i.test(code) || /\bthrow\b/i.test(code)) {
+      alert("Submission not allowed: code must not contain 'raise' or 'throw' keywords.");
+      return;
+    }
     const prob = filteredProblems[selectedIndex];
     const langMap = { py: "py", python: "py", java: "java", cpp: "cpp", "c++": "cpp" };
     const lang = langMap[language.toLowerCase()] || "py";
@@ -263,135 +275,142 @@ export default function CodeEditorPage() {
   }
 
   // *** NEW UI STYLING (only a layout change, feature parity remains) ***
-return (
-  <div className="flex flex-col md:flex-row h-screen relative bg-gradient-to-br from-[#1e202f] to-[#2c2d40] text-white font-sans">
+  return (
+    <div className="flex flex-col md:flex-row h-screen relative bg-gradient-to-br from-[#1e202f] to-[#2c2d40] text-white font-sans">
 
-    {/* Sidebar backdrop to close on mobile */}
-    {sidebarOpen && (
-      <div
-        className="fixed inset-0 bg-black bg-opacity-40 z-40"
-        onClick={() => setSidebarOpen(false)}
-      />
-    )}
+      {/* Sidebar backdrop to close on mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-    {/* Sidebar (overlay, responsive width) */}
-    <aside
-      className={`fixed top-0 left-0 z-50 h-full bg-zinc-900 shadow-2xl rounded-r-lg flex flex-col
+      {/* Sidebar (overlay, responsive width) */}
+      <aside
+        className={`fixed top-0 left-0 z-50 h-full bg-zinc-900 shadow-2xl rounded-r-lg flex flex-col
         transform transition-transform duration-300 
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
         w-[70%] sm:w-[50%] md:w-[30%] lg:w-[22%]`}
-    >
-      {/* Close button only on mobile */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700 bg-zinc-800 md:hidden">
-        <h2 className="text-lg font-bold text-white">Problems</h2>
-        <button
-          onClick={() => setSidebarOpen(false)}
-          aria-label="Close Problem List"
-          className="text-white hover:text-red-400 text-2xl"
-        >
-          ✖
-        </button>
-      </div>
-
-      <ProblemSelector
-        problems={filteredProblems}
-        selectedIndex={selectedIndex}
-        setSelectedIndex={(idx) => {
-          setSelectedIndex(idx);
-          setSidebarOpen(false);
-          if (window.innerWidth < 768) {
-            setSidebarOpen(false);
-          }
-        }}
-        setCode={setCode}
-        setInput={setInput}
-        setOutput={setOutput}
-        setSimilarityScore={setSimilarityScore}
-        setIsSubmitDisabled={setIsSubmitDisabled}
-        setLanguage={setLanguage}
-        fiascode={fiascode}
-      />
-    </aside>
-
-    {/* Left Pane */}
-    <div className="flex-[0.50] flex flex-col p-4 md:p-6 overflow-y-auto space-y-6">
-      <HeaderControls
-        language={language}
-        setLanguage={setLanguage}
-        code={code}
-        OGcode={OGcode}
-        setCode={setCode}
-        fiascode={fiascode}
-        problems={filteredProblems}
-        selectedIndex={selectedIndex}
-        setShowLeaderboard={setShowLeaderboard}
-        setShowContestRegister={setShowContestRegister}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-
-      {selectedIndex !== null && filteredProblems[selectedIndex] ? (
-        <div className="mt-6 flex-1 min-h-[30%]">
-          <ProblemDetails problem={filteredProblems[selectedIndex]} />
+      >
+        {/* Close button only on mobile */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700 bg-zinc-800 md:hidden">
+          <h2 className="text-lg font-bold text-white">Problems</h2>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close Problem List"
+            className="text-white hover:text-red-400 text-2xl"
+          >
+            ✖
+          </button>
         </div>
-      ) : (
-        <p className="text-center text-gray-400 mt-10 select-none">
-          Please select a problem to see details
-        </p>
-      )}
 
-      {/* Controls and Submissions button container */}
-      <div className="flex items-center justify-between mb-2 w-full">
-        <button
-          onClick={handleGenerateAIHint}
-          disabled={aiLoading}
-          className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded px-3 py-1.5 text-sm inline-flex items-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Get minimal AI hint"
-        >
-          {aiLoading ? "Generating hint..." : "💡 Get hint"}
-        </button>
+        <ProblemSelector
+          problems={filteredProblems}
+          selectedIndex={selectedIndex}
+          setSelectedIndex={(idx) => {
+            setSelectedIndex(idx);
+            setSidebarOpen(false);
+            if (window.innerWidth < 768) {
+              setSidebarOpen(false);
+            }
+          }}
+          setCode={setCode}
+          setInput={setInput}
+          setOutput={setOutput}
+          setSimilarityScore={setSimilarityScore}
+          setIsSubmitDisabled={setIsSubmitDisabled}
+          setLanguage={setLanguage}
+          fiascode={fiascode}
+        />
+      </aside>
 
-        <button
-          onClick={() => setSubmissions(true)}
-          className="cursor-pointer px-3 py-2 bg-green-600 rounded text-white hover:bg-green-700 text-sm"
-        >
-          Submissions
-        </button>
+      {/* Left Pane */}
+      <div className="flex-[0.50] flex flex-col p-4 md:p-6 overflow-y-auto space-y-6">
+        <HeaderControls
+          language={language}
+          setLanguage={setLanguage}
+          code={code}
+          OGcode={OGcode}
+          setCode={setCode}
+          fiascode={fiascode}
+          problems={filteredProblems}
+          selectedIndex={selectedIndex}
+          setShowLeaderboard={setShowLeaderboard}
+          setShowContestRegister={setShowContestRegister}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
+
+        {selectedIndex !== null && filteredProblems[selectedIndex] ? (
+          <div className="mt-6 flex-1 min-h-[30%]">
+            <ProblemDetails problem={filteredProblems[selectedIndex]} />
+          </div>
+        ) : (
+          <p className="text-center text-gray-400 mt-10 select-none">
+            Please select a problem to see details
+          </p>
+        )}
+
+        {/* Controls and Submissions button container */}
+        <div className="flex items-center justify-between mb-2 w-full">
+          <button
+            onClick={handleGenerateAIHint}
+            disabled={aiLoading}
+            className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white rounded px-3 py-1.5 text-sm inline-flex items-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Get minimal AI hint"
+          >
+            {aiLoading ? "Generating hint..." : "💡 Get hint"}
+          </button>
+
+          <button
+            onClick={() => setSubmissions(true)}
+            className="cursor-pointer px-3 py-2 bg-green-600 rounded text-white hover:bg-green-700 text-sm"
+          >
+            Submissions
+          </button>
+        </div>
+
+        {/* AI hint text preview */}
+        {aiEnabled && selectedIndex !== null && aiHint && (
+          <pre className="bg-zinc-800 rounded p-3 max-h-48 overflow-auto whitespace-pre-wrap text-sm w-full">
+            {aiHint}
+          </pre>
+        )}
+
+        {/* InputBox */}
+        <div className="flex items-center space-x-4 relative w-full">
+          <InputBox input={input} setInput={setInput} className="flex-1 w-full" />
+        </div>
+
+        {/* Output Console */}
+        <div className="mb-6 w-full max-h-64 overflow-auto rounded bg-zinc-900 text-sm font-mono text-white">
+          <OutputConsole output={output} />
+        </div>
       </div>
 
-      {/* AI hint text preview */}
-      {aiEnabled && selectedIndex !== null && aiHint && (
-        <pre className="bg-zinc-800 rounded p-3 max-h-48 overflow-auto whitespace-pre-wrap text-sm w-full">
-          {aiHint}
-        </pre>
-      )}
+      {/* Right Panel */}
+      <div className="flex-[0.5] flex flex-col p-4 md:p-6 h-full">
 
-      {/* InputBox */}
-      <div className="flex items-center space-x-4 relative w-full">
-        <InputBox input={input} setInput={setInput} className="flex-1 w-full" />
-      </div>
-
-      {/* Output Console */}
-      <div className="mb-6 w-full max-h-64 overflow-auto rounded bg-zinc-900 text-sm font-mono text-white">
-        <OutputConsole output={output} />
-      </div>
-    </div>
-
-    {/* Right Panel */}
-    <div className="flex-[0.5] flex flex-col p-4 md:p-6 h-full">
-      <EditorPanel
-        code={code}
-        setCode={setCode}
-        language={language}
-        similarityScore={similarityScore}
-        isSubmitDisabled={isSubmitDisabled}
-        runHandler={handleRun}
-        submitHandler={handleSubmit}
-        fiascode={fiascode}
-      />
-    </div>
+        <EditorPanel
+          code={code}
+          setCode={setCode}
+          language={language}
+          similarityScore={similarityScore}
+          isSubmitDisabled={isSubmitDisabled}
+          runHandler={handleRun}
+          submitHandler={handleSubmit}
+          fiascode={fiascode}
+        />
+{timeLeft !== null && (
+  <div className="fixed bottom-7 right-7 bg-gray-700 rounded px-4 py-2 text-white font-mono text-lg z-50">
+    Time left: {formatTime()}
   </div>
-);
+)}
+
+      </div>
+    </div>
+  );
 
 
 }

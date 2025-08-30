@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
+import bcrypt from "bcryptjs";
 import "react-datepicker/dist/react-datepicker.css";
 import { setAiAssistanceEnabled, fetchAiAssistanceEnabled } from "../api/aiService";
 import {
@@ -95,6 +96,8 @@ export default function AdminPage() {
     name: "",
     start: null,
     end: null,
+    password: "",
+    duration: 0,
   });
   const [editContestId, setEditContestId] = useState(null);
 
@@ -230,7 +233,7 @@ export default function AdminPage() {
 
   // -------- Contest Handlers --------
   const handleContestSave = async () => {
-    const { name, start, end } = newContest;
+    const { name, start, end, password, duration } = newContest;
 
     if (!name.trim() || !start || !end) {
       setError("Fill all contest fields.");
@@ -241,14 +244,14 @@ export default function AdminPage() {
       setError("Start date/time must be before end date/time.");
       return;
     }
-
     const contestToSave = {
       ...newContest,
       start: start.toISOString(),
       end: end.toISOString(),
       problems: newContest.problems || [],
+      password: password,
+      duration: duration,
     };
-
     try {
       if (editContestId) {
         await updateContest(editContestId, contestToSave);
@@ -256,7 +259,7 @@ export default function AdminPage() {
         const newId = uuidv4();
         await addContest({ ...contestToSave, id: newId });
       }
-      setNewContest({ id: "", name: "", start: null, end: null });
+      setNewContest({ id: "", name: "", start: null, end: null, password: "", duration: 0 });
       setEditContestId(null);
       await fetchData();
       setError("");
@@ -272,6 +275,8 @@ export default function AdminPage() {
       start: contest.start ? new Date(contest.start) : null,
       end: contest.end ? new Date(contest.end) : null,
       problems: contest.problems || [],
+      password: contest.password || "", 
+      duration: contest.duration || 0, 
     });
     setEditContestId(contest.id || contest._id);
   };
@@ -787,6 +792,32 @@ export default function AdminPage() {
             placeholderText="Select end date & time"
           />
         </div>
+        <div>
+          <label className="block mb-1 text-white font-semibold">Duration (minutes)</label>
+          <input
+            type="number"
+            min={0}
+            value={newContest.duration}
+            onChange={(e) =>
+              setNewContest((prev) => ({ ...prev, duration: Number(e.target.value) }))
+            }
+            className="p-2 bg-zinc-900 text-white rounded w-full"
+            placeholder="Enter contest duration"
+          />
+        </div>
+        <div>
+          <label className="block mb-1 text-white font-semibold">Contest Password</label>
+          <input
+            type="password"
+            value={newContest.password}
+            onChange={(e) =>
+              setNewContest((prev) => ({ ...prev, password: e.target.value }))
+            }
+            placeholder="Enter contest password"
+            className="p-2 bg-zinc-900 text-white rounded w-full"
+          />
+        </div>
+
 
         <div></div>
 

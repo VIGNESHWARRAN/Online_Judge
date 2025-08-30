@@ -5,6 +5,7 @@ import EditorWrapper from "./components/CCWrapper";
 import { RequireAuth } from "./components/RequireAuth";
 import { AuthProvider } from "./api/authuser";
 import { useEffect } from "react";
+import { ContestSessionProvider } from "./api/CreateSessionContext";
 
 function useKeepAlivePing() {
   useEffect(() => {
@@ -21,8 +22,10 @@ function useKeepAlivePing() {
 function App() {
   useKeepAlivePing();
   return (
+    
     <BrowserRouter>
       <AuthProvider>
+        <ContestSessionProvider>
         <Routes>
           {/* Public Route */}
           <Route path="/" element={<HomePage />} />
@@ -42,11 +45,13 @@ function App() {
             path="/editor"
             element={
               <RequireAuth allowedTypes={["user", "admin"]}>
-                <EditorWrapper />
+                
+                  <EditorWrapper />
               </RequireAuth>
             }
           />
         </Routes>
+      </ContestSessionProvider>
       </AuthProvider>
     </BrowserRouter>
   );

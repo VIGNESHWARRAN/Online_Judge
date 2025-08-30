@@ -136,3 +136,20 @@ export async function addProblemToContest(contestId, problemId) {
     throw err;
   }
 }
+
+export function validateContestPassword(contestId, password) {
+  return fetch(`${CONTEST_API_BASE}/validate-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ contestId, password }),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Password validation failed");
+      return res.json();
+    })
+    .catch((err) => {
+      console.error("Error validating contest password:", err);
+      throw err;
+    });
+}

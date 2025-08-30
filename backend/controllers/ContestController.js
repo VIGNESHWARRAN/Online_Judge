@@ -4,6 +4,7 @@ import Contest from '../models/contest.js';
 export const createContest = async (req, res) => {
   try {
     const contest = new Contest(req.body);
+    console.log(contest);
     await contest.save();
     res.status(201).json(contest);
   } catch (error) {
@@ -170,5 +171,34 @@ export const removeProblemFromContest = async (req, res) => {
   } catch (error) {
     console.error('Error removing problem from contest:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
+
+// Validate contest password
+export const validateContestPassword = async (req, res) => {
+  const { contestId, password } = req.body;
+
+  if (!contestId || !password) {
+    return res.status(400).json({ error: "contestId and password are required" });
+  }
+
+  try {
+    const contest = await Contest.findById(contestId);
+    if (!contest) {
+      return res.status(404).json({ error: "Contest not found" });
+    }
+
+    if (!contest.password) {
+      // No password set, so consider validated
+      return res.json({ valid: true });
+    }
+
+    const isValid = await contest.comparePassword(password);
+    return res.json({ valid: isValid });
+  } catch (error) {
+    console.error("Error validating contest password:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
