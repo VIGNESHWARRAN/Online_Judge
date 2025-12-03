@@ -74,7 +74,23 @@ export default function CodeEditorPage() {
   const [showSubmissions, setSubmissions] = useState(false);
 
   const [codeInitialized, setCodeInitialized] = useState<boolean>(false);
+  //Admin testing privilege
+  const [adminTestMode, setAdminTestMode] = useState(false);
+  const [testProblemId, setTestProblemId] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);  // 👈 ADD THIS
+  const auth = useContext(AuthContext);
 
+  // 👇 FIX: Move isAdmin to useEffect
+  useEffect(() => {
+    if (auth?.type === "admin") {
+      setIsAdmin(true);
+      console.log("👑 ADMIN DETECTED");
+    } else {
+      setIsAdmin(false);
+      console.log("👤 Regular User");
+    }
+  }, [auth?.type]);
+  console.log(isAdmin);
   const { timeLeft } = useContestSession();
 
   const formatTime = (): string => {
@@ -144,10 +160,35 @@ export default function CodeEditorPage() {
       : false;
 
   // Filtered problems
-  const filteredProblems =
-    userContestId && isContestLive
-      ? problems.filter((p) => currentContest?.problems.includes(p.id))
-      : problems.filter((p) => !allContestProblemIds.has(p.id));
+  // 👇 REPLACE your entire filtered problems section with this:
+  let filteredProblems = problems;
+
+  // Regular users: contest/practice filtering (unchanged)
+  if (!isAdmin) {
+    if (userContestId && isContestLive) {
+      filteredProblems = problems.filter((p) => currentContest?.problems.includes(p.id));
+    } else {
+      filteredProblems = problems.filter((p) => !allContestProblemIds.has(p.id));
+    }
+  } else if (adminTestMode) {
+    // 👑 ADMIN TEST MODE: ALL problems (no filtering)
+    filteredProblems = problems;
+  } else {
+    // Admin normal mode: same as regular user
+    if (userContestId && isContestLive) {
+      filteredProblems = problems.filter((p) => currentContest?.problems.includes(p.id));
+    } else {
+      filteredProblems = problems.filter((p) => !allContestProblemIds.has(p.id));
+    }
+  }
+
+  // Specific test override (if you add per-problem testing later)
+  if (isAdmin && adminTestMode && testProblemId) {
+    const targetProblem = problems.find(p => p.id === testProblemId);
+    filteredProblems = targetProblem ? [targetProblem] : [];
+  }
+
+
 
   // Code/selection init
   useEffect(() => {
@@ -196,6 +237,25 @@ export default function CodeEditorPage() {
     setSimilarityScore(scorePercent);
     setIsSubmitDisabled(scorePercent < (prob.constraintLimit || 0));
   }, [code, selectedIndex, filteredProblems]);
+  // 👇 REPLACE your current URL useEffect with this:
+  useEffect(() => {
+    console.log("🔍 URL Check:", window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdminTest = urlParams.get("isAdminTest") === "true";
+
+    console.log("🔍 URL Parsed:", { isAdminTest, fullSearch: window.location.search });
+
+    if (isAdmin && isAdminTest) {
+      setAdminTestMode(true);
+      console.log("🧪 ADMIN TEST MODE ACTIVATED!");
+    } else {
+      setAdminTestMode(false);
+      setTestProblemId(null);
+    }
+  }, [isAdmin, problems]); // 👈 Key: problems dependency
+
+
+
 
   // Submit handler
   const handleSubmit = async () => {
@@ -341,6 +401,20 @@ export default function CodeEditorPage() {
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
+        {/* 👇 ADD THIS INDICATOR */}
+        {isAdmin && adminTestMode && (
+          <div className="mx-4 p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-400/50 rounded-2xl backdrop-blur-sm shadow-xl">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-xl">👑</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-green-300">ADMIN TEST MODE ACTIVE</h3>
+                <p className="text-green-200 text-sm">{filteredProblems.length} problems visible (All Access)</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {selectedIndex !== null && filteredProblems[selectedIndex] ? (
           <div className="mt-6 flex-1 min-h-[30%]">
@@ -402,11 +476,11 @@ export default function CodeEditorPage() {
           submitHandler={handleSubmit}
           fiascode={fiascode}
         />
-{timeLeft !== null && (
-  <div className="fixed bottom-7 right-7 bg-gray-700 rounded px-4 py-2 text-white font-mono text-lg z-50">
-    Time left: {formatTime()}
-  </div>
-)}
+        {timeLeft !== null && (
+          <div className="fixed bottom-7 right-7 bg-gray-700 rounded px-4 py-2 text-white font-mono text-lg z-50">
+            Time left: {formatTime()}
+          </div>
+        )}
 
       </div>
     </div>

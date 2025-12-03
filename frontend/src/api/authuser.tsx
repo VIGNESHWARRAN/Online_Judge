@@ -56,15 +56,32 @@ export function useAuthHandler() {
         const encodedId = encodeURIComponent(user.sub);
         const res = await fetch(`${import.meta.env.VITE_BACKEND_IP}/api/users/${encodedId}`, {credentials: "include"});
         if (res.ok) {
-          const existingUser = await res.json();
-          setType(existingUser.type);
-          setDbUser(existingUser);
-        if (existingUser.type === "admin" && location.pathname !== "/admin") {
-          navigate("/admin");
-        } else if (existingUser.type === "user" && location.pathname !== "/editor") {
-          navigate("/editor");
-        }
-        } else {
+  const existingUser = await res.json();
+  setType(existingUser.type);
+  setDbUser(existingUser);
+
+  // FIXED: Use full browser URL
+  const url = new URL(window.location.href);
+  const isAdminTestMode = url.searchParams.get("isAdminTest") === "true";
+
+  console.log("🔍 Auth:", {
+    type: existingUser.type,
+    path: location.pathname,
+    adminTest: isAdminTestMode,
+    url: window.location.href
+  });
+
+  if (existingUser.type === "admin") {
+    if (location.pathname === "/" && !isAdminTestMode) {
+      navigate("/admin");
+    }
+  } else if (existingUser.type === "user") {
+    if (location.pathname === "/" || location.pathname === "/login") {
+      navigate("/editor");
+    }
+  }
+}
+else {
           const createRes = await fetch(`${import.meta.env.VITE_BACKEND_IP}/api/users`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

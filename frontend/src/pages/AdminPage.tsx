@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { setAiAssistanceEnabled, fetchAiAssistanceEnabled } from "../api/aiService";
+import { AuthContext } from "../api/authuser";
+import { useNavigate} from "react-router-dom";
 import {
   addUser,
   readUsers,
@@ -33,9 +35,12 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [view, setView] = useState("users");
   const [selectedContestId, setSelectedContestId] = useState("practice");
+  const auth = useContext(AuthContext);
+  console.log(auth.type);
 
   const [aiAssistanceEnabled, setAiAssistanceEnabledState] = useState(false);
   const [aiToggleLoading, setAiToggleLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch AI toggle status from backend on mount
   useEffect(() => {
@@ -274,8 +279,8 @@ export default function AdminPage() {
       start: contest.start ? new Date(contest.start) : null,
       end: contest.end ? new Date(contest.end) : null,
       problems: contest.problems || [],
-      password: contest.password || "", 
-      duration: contest.duration || 0, 
+      password: contest.password || "",
+      duration: contest.duration || 0,
     });
     setEditContestId(contest.id || contest._id);
   };
@@ -439,6 +444,31 @@ export default function AdminPage() {
   const renderProblemSection = () => (
     <section>
       <h2 className="text-2xl font-semibold mb-4 text-white">📘 Manage Problems</h2>
+
+      {/* 👇 ADD THIS BUTTON */}
+      <div className="mb-8 p-4 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-2 border-indigo-500/50 rounded-2xl backdrop-blur-sm">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-indigo-500/80 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-2xl">🧪</span>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-indigo-300">Admin Test Mode</h3>
+              <p className="text-indigo-200 text-sm">Test ALL {problems.length} problems → No contest restrictions</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              console.log("🚀 Navigating to editor...");
+              navigate(`/editor?isAdminTest=true`);
+            }}
+            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-300 flex items-center space-x-3"
+          >
+            <span>🚀 Open Code Editor</span>
+            <span className="text-sm font-normal">(Admin Mode)</span>
+          </button>
+        </div>
+      </div>
 
       {/* Contest selector for filtering */}
       <div className="mb-4">
