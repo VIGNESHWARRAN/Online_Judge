@@ -218,6 +218,9 @@ export default function CodeEditorPage() {
       setCodeInitialized(true);
       setAiHint("");
       setFiascode(firstProblemCode.trim() !== "");
+      if(isAdmin){
+        setFiascode(true);
+      }
     }
   }, [filteredProblems, codeInitialized]);
 
