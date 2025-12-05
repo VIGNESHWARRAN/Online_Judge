@@ -67,7 +67,7 @@ export default function EditorPanel({
         </button>
 
         <div className="text-white font-mono select-none" aria-label="Similarity score">
-          {similarityScore}%
+          {similarityScore.toFixed(2)}%
         </div>
       </div>
 
