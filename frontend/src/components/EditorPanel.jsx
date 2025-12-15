@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 
 export default function EditorPanel({
@@ -11,6 +11,12 @@ export default function EditorPanel({
   submitHandler,
 }) {
   const [clickedButton, setClickedButton] = useState(null);
+  const [hasForbiddenKeywords, setHasForbiddenKeywords] = useState(false); 
+    useEffect(() => {
+    const hasThrow = code.toLowerCase().includes("throw");
+    const hasRaise = code.toLowerCase().includes("raise");
+    setHasForbiddenKeywords(hasThrow || hasRaise);
+  }, [code]);
 
   const handleClickWithFeedback = (buttonKey, callback) => {
     setClickedButton(buttonKey);
@@ -32,20 +38,20 @@ export default function EditorPanel({
     }
     return classes;
   };
-
+  const isDisabled = isSubmitDisabled || hasForbiddenKeywords;
   return (
     <div className="flex flex-col h-full">
       <div className="mb-4 flex space-x-4 items-center">
         <button
           type="button"
-          disabled={isSubmitDisabled}
+          disabled={isDisabled}
           onClick={() => handleClickWithFeedback("run", runHandler)}
           className={getButtonClass(
             "run",
             "cursor-pointer flex-1 rounded py-3 font-semibold text-white transition duration-200 bg-blue-600 hover:bg-blue-700",
-            isSubmitDisabled
+            isDisabled
           )}
-          title={isSubmitDisabled ? "Disabled due to low similarity" : ""}
+          title={isDisabled ? "Disabled due to low similarity" : ""}
           aria-label="Run code"
         >
           Run
@@ -53,14 +59,14 @@ export default function EditorPanel({
 
         <button
           type="button"
-          disabled={isSubmitDisabled}
+          disabled={isDisabled}
           onClick={() => handleClickWithFeedback("submit", submitHandler)}
           className={getButtonClass(
             "submit",
             "cursor-pointer flex-1 rounded py-3 font-semibold text-white transition duration-200 bg-green-600 hover:bg-green-700",
-            isSubmitDisabled
+            isDisabled
           )}
-          title={isSubmitDisabled ? "Disabled due to low similarity" : ""}
+          title={isDisabled ? "Disabled due to low similarity" : ""}
           aria-label="Submit code"
         >
           Submit

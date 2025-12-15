@@ -238,7 +238,6 @@ export default function CodeEditorPage() {
     const scorePercent = similarity * 100;
 
     setSimilarityScore(scorePercent);
-    console.log(similarityScore, prob.constraintLimit);
     setIsSubmitDisabled(scorePercent < (prob.constraintLimit || 0));
   }, [code, selectedIndex, filteredProblems]);
   // 👇 REPLACE your current URL useEffect with this:
