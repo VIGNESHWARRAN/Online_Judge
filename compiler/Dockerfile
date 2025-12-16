@@ -1,4 +1,4 @@
-FROM fiascode-compiler:latest
+FROM node:24-alpine
 WORKDIR /compiler
 RUN apk update && apk add --no-cache g++ python3 openjdk21-jdk
 COPY . .

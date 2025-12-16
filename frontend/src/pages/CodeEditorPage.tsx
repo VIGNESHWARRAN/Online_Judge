@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { readUser } from "../api/users";
-import { readProblem, readProblems } from "../api/problems";
+import { readProblems } from "../api/problems";
 import { readContests } from "../api/contests";
 import { AuthContext } from "../api/authuser";
 import HeaderControls from "../components/HeaderControls";
@@ -103,57 +103,50 @@ export default function CodeEditorPage() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiHint, setAiHint] = useState("");
-useEffect(() => {
-  if (!userId) return;
-  
-  async function fetchContestData() {
-    try {
-      const [userData, allContests] = await Promise.all([
-        readUser(userId),
-        readContests(),
-      ]);
-      
-      setUserContestId(userData?.contest || null);
-      const normalizedContests = (allContests || []).map((c) => ({
-        ...c,
-        problems: c.problems || [],
-        id: c.id || c._id,
-      }));
-      setContests(normalizedContests);
 
-      // 👇 ADMIN: Fetch ALL problems
-      // 👇 USER: Fetch ONLY current contest problems
-      if (isAdmin) {
-        const allProblems = await readProblems(); // 👑 ADMIN: ALL problems
-        setProblems(allProblems.filter(p => p != null));
-      } else if (userContestId) {
-        // 🎯 USER IN CONTEST: ONLY current contest problems (3-5 problems)
-        const currentContest = normalizedContests.find(c => c.id === userContestId);
-        if (currentContest?.problems?.length) {
-          const currentProblemPromises = currentContest.problems.map(problemId => 
-            readProblem(problemId)
-          );
-          const currentProblems = await Promise.all(currentProblemPromises);
-          setProblems(currentProblems.filter(p => p != null));
-        } else {
-          setProblems([]); // Empty contest
-        }
+  // Fetch AI Assistance enabled flag on userId change
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      try {
+        const enabled = await fetchAiAssistanceEnabled();
+        setAiEnabled(enabled);
+      } catch (e) {
+        setAiEnabled(false);
+        console.error("Failed to fetch AI assistance toggle", e);
       }
-      
-      setCodeInitialized(false);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  }
-  
-  fetchContestData();
-}, [userId, isAdmin]); // 👈 Add isAdmin to deps
+    })();
+  }, [userId]);
+  // Data fetch
+  useEffect(() => {
+    if (!userId) return;
+    async function fetchAllData() {
+      try {
+        const [userData, problemData, contestData] = await Promise.all([
+          readUser(userId),
+          readProblems(),
+          readContests(),
+        ]);
+        setUserContestId(userData?.contest || null);
 
+        const normalizedContests = (contestData || []).map((c) => ({
+          ...c,
+          problems: c.problems || [],
+          id: c.id || c._id,
+        }));
+
+        setContests(normalizedContests);
+        setProblems(problemData);
+        setCodeInitialized(false);
+      } catch (error) {
+        console.error("Error fetching data", error);
+      }
+    }
+    fetchAllData();
+  }, [userId]);
 
   const currentContest = contests.find((c) => c.id === userContestId);
   const allContestProblemIds = new Set<string>(contests.flatMap((c) => c.problems || []));
-
-
 
   // Is contest live
   const isContestLive =
