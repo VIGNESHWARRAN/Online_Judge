@@ -1,5 +1,10 @@
 import React, { useEffect, useState, useContext } from "react";
-import { readContests, registerUser, unregisterUserFromContest, validateContestPassword } from "../api/contests";
+import {
+  readContests,
+  registerUser,
+  unregisterUserFromContest,
+  validateContestPassword,
+} from "../api/contests";
 import { updateUserContest } from "../api/users";
 import { AuthContext } from "../api/authuser";
 import { useContestSession } from "../api/CreateSessionContext";
@@ -17,7 +22,6 @@ export default function ContestRegisterPage() {
   const [passwordInput, setPasswordInput] = useState("");
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordError, setPasswordError] = useState("");
-
 
   const { user } = useContext(AuthContext);
   const userId = user.sub;
@@ -74,7 +78,7 @@ export default function ContestRegisterPage() {
     try {
       await unregisterUserFromContest(contestId, userId);
       await updateUserContest(userId, null);
-      setUserContests([]); // clear all registrations
+      setUserContests([]);
       setMessage("Successfully unregistered from the contest!");
     } catch (err) {
       setMessage("Unregistration failed. Please try again.");
@@ -88,14 +92,12 @@ export default function ContestRegisterPage() {
 
   const handleStartClick = (contest) => {
     if (contest.password) {
-      // Show password prompt if password protected
       setSelectedContestToStart(contest);
       setPasswordInput("");
       setPasswordError("");
       setShowPasswordPrompt(true);
     } else {
-      // Redirect directly if no password
-      window.history.back()
+      window.history.back();
     }
   };
 
@@ -109,13 +111,12 @@ export default function ContestRegisterPage() {
       );
 
       if (data.valid) {
-        // Register on successful password validation
         await registerAndUpdate(selectedContestToStart.id || selectedContestToStart._id);
         const durationMinutes: number = selectedContestToStart.duration || 0;
         if (durationMinutes > 0) {
           startSession(durationMinutes);
         }
-        window.history.back()
+        window.history.back();
       } else {
         setPasswordError("Invalid password. Please try again.");
       }
@@ -126,8 +127,6 @@ export default function ContestRegisterPage() {
       setLoading(false);
     }
   };
-
-
 
   return (
     <RequireAuth allowedTypes={[]}>
@@ -155,13 +154,10 @@ export default function ContestRegisterPage() {
           )}
         </div>
 
-        {/* Top bar */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-8 w-full max-w-5xl mx-auto">
           <h1 className="text-2xl md:text-4xl font-bold text-center text-indigo-400 flex-grow">
             Contest Registration
           </h1>
-
-          {/* Spacer for symmetry */}
           <div className="hidden md:block" style={{ width: 120 }} />
         </div>
 
@@ -184,8 +180,11 @@ export default function ContestRegisterPage() {
             <ul className="space-y-4 md:space-y-6">
               {contests.map((contest) => {
                 const cid = contest.id || contest._id;
-                const ended = new Date(contest.end) < now;
+                const startDate = new Date(contest.start);
+                const endDate = new Date(contest.end);
+                const ended = endDate < now;
                 const registered = userContests.includes(cid);
+                const notStartedYet = startDate > now; // contest start time in future
 
                 return (
                   <li
@@ -197,8 +196,7 @@ export default function ContestRegisterPage() {
                         {contest.name}
                       </h2>
                       <p className="text-gray-400 mt-1 text-sm md:text-base select-text">
-                        {new Date(contest.start).toLocaleString()} -{" "}
-                        {new Date(contest.end).toLocaleString()}
+                        {startDate.toLocaleString()} - {endDate.toLocaleString()}
                       </p>
                     </div>
 
@@ -234,10 +232,14 @@ export default function ContestRegisterPage() {
                       {!ended && !registered && (
                         <button
                           onClick={() => handleRegister(contest)}
-                          disabled={loading || userContests.length > 0} // Disable if already registered
+                          disabled={loading || userContests.length > 0 || notStartedYet}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-5 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-sm md:text-base transition"
                         >
-                          {userContests.length > 0 ? "Already in a contest" : "Register"}
+                          {userContests.length > 0
+                            ? "Already in a contest"
+                            : notStartedYet
+                            ? "Not started yet"
+                            : "Register"}
                         </button>
                       )}
                     </div>
@@ -248,7 +250,6 @@ export default function ContestRegisterPage() {
           )}
         </div>
 
-        {/* Password Prompt Modal */}
         {showPasswordPrompt && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
             <div className="bg-gray-800 p-6 rounded shadow-lg w-80 text-white">

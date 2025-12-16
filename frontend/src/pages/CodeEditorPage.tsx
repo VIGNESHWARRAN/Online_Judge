@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { readUser } from "../api/users";
-import { readProblem } from "../api/problems";
+import { readProblem, readProblems } from "../api/problems";
 import { readContests } from "../api/contests";
 import { AuthContext } from "../api/authuser";
 import HeaderControls from "../components/HeaderControls";
@@ -103,56 +103,56 @@ export default function CodeEditorPage() {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiHint, setAiHint] = useState("");
-
-  // Fetch AI Assistance enabled flag on userId change
 useEffect(() => {
   if (!userId) return;
   
-  async function fetchAllData() {
+  async function fetchContestData() {
     try {
-      const [userData, contestData] = await Promise.all([
+      const [userData, allContests] = await Promise.all([
         readUser(userId),
         readContests(),
       ]);
       
       setUserContestId(userData?.contest || null);
-
-      const normalizedContests = (contestData || []).map((c) => ({
+      const normalizedContests = (allContests || []).map((c) => ({
         ...c,
         problems: c.problems || [],
         id: c.id || c._id,
       }));
-
       setContests(normalizedContests);
+
+      // 👇 ADMIN: Fetch ALL problems
+      // 👇 USER: Fetch ONLY current contest problems
+      if (isAdmin) {
+        const allProblems = await readProblems(); // 👑 ADMIN: ALL problems
+        setProblems(allProblems.filter(p => p != null));
+      } else if (userContestId) {
+        // 🎯 USER IN CONTEST: ONLY current contest problems (3-5 problems)
+        const currentContest = normalizedContests.find(c => c.id === userContestId);
+        if (currentContest?.problems?.length) {
+          const currentProblemPromises = currentContest.problems.map(problemId => 
+            readProblem(problemId)
+          );
+          const currentProblems = await Promise.all(currentProblemPromises);
+          setProblems(currentProblems.filter(p => p != null));
+        } else {
+          setProblems([]); // Empty contest
+        }
+      }
       
-      // Get all unique problem IDs from all contests
-      const allContestProblemIds = new Set<string>(
-        normalizedContests.flatMap((c) => c.problems || [])
-      );
-      
-      // Fetch each problem individually
-      const problemPromises = Array.from(allContestProblemIds).map(problemId => 
-        readProblem(problemId)
-      );
-      
-      const fetchedProblems = await Promise.all(problemPromises);
-      
-      // Filter out any null/undefined results
-      const validProblems = fetchedProblems.filter(p => p != null);
-      
-      setProblems(validProblems);
       setCodeInitialized(false);
-      
     } catch (error) {
-      console.error("Error fetching data", error);
+      console.error("Error fetching data:", error);
     }
   }
   
-  fetchAllData();
-}, [userId]);
+  fetchContestData();
+}, [userId, isAdmin]); // 👈 Add isAdmin to deps
+
 
   const currentContest = contests.find((c) => c.id === userContestId);
   const allContestProblemIds = new Set<string>(contests.flatMap((c) => c.problems || []));
+
 
 
   // Is contest live
