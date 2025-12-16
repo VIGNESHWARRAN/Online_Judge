@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { readUser } from "../api/users";
-import { readProblems } from "../api/problems";
+import { readProblems, readProblem } from "../api/problems";
 import { readContests } from "../api/contests";
 import { AuthContext } from "../api/authuser";
 import HeaderControls from "../components/HeaderControls";
@@ -118,32 +118,127 @@ export default function CodeEditorPage() {
     })();
   }, [userId]);
   // Data fetch
-  useEffect(() => {
-    if (!userId) return;
-    async function fetchAllData() {
-      try {
-        const [userData, problemData, contestData] = await Promise.all([
-          readUser(userId),
-          readProblems(),
-          readContests(),
-        ]);
-        setUserContestId(userData?.contest || null);
 
-        const normalizedContests = (contestData || []).map((c) => ({
-          ...c,
-          problems: c.problems || [],
-          id: c.id || c._id,
-        }));
+useEffect(() => {
+  if (!userId) return;
+  
+  async function fetchAllData() {
+    try {
+      const [userData, contestData] = await Promise.all([
+        readUser(userId),
+        readContests(),
+      ]);
+      
+      setUserContestId(userData?.contest || null);
 
-        setContests(normalizedContests);
-        setProblems(problemData);
-        setCodeInitialized(false);
-      } catch (error) {
-        console.error("Error fetching data", error);
-      }
+      const normalizedContests = (contestData || []).map((c) => ({
+        ...c,
+        problems: c.problems || [],
+        id: c.id || c._id,
+      }));
+
+      setContests(normalizedContests);
+      setCodeInitialized(false);
+      
+    } catch (error) {
+      console.error("Error fetching data", error);
     }
-    fetchAllData();
-  }, [userId]);
+  }
+  
+  fetchAllData();
+}, [userId]);
+  // useEffect(() => {
+  //   if (!userId) return;
+  //   async function fetchAllData() {
+  //     try {
+  //       const [userData, problemData, contestData] = await Promise.all([
+  //         readUser(userId),
+  //         readProblems(),
+  //         readContests(),
+  //       ]);
+  //       setUserContestId(userData?.contest || null);
+
+  //       const normalizedContests = (contestData || []).map((c) => ({
+  //         ...c,
+  //         problems: c.problems || [],
+  //         id: c.id || c._id,
+  //       }));
+
+  //       setContests(normalizedContests);
+  //       setProblems(problemData);
+  //       setCodeInitialized(false);
+  //     } catch (error) {
+  //       console.error("Error fetching data", error);
+  //     }
+  //   }
+  //   fetchAllData();
+  // }, [userId]);
+  useEffect(() => {
+  if (contests.length === 0) return;
+  
+  async function fetchFilteredProblems() {
+    try {
+      const currentContest = contests.find((c) => c.id === userContestId);
+      const allContestProblemIds = new Set<string>(
+        contests.flatMap((c) => c.problems || [])
+      );
+      
+      // Determine which problem IDs to fetch based on user type and contest status
+      let problemIdsToFetch: string[] = [];
+      
+      // Check if contest is live
+      const isContestLive = currentContest && currentContest.start && currentContest.end
+        ? (() => {
+            const now = new Date();
+            const start = new Date(currentContest.start);
+            const end = new Date(currentContest.end);
+            return now >= start && now <= end;
+          })()
+        : false;
+      
+      if (!isAdmin) {
+        if (userContestId && isContestLive) {
+          // Regular user in live contest: fetch only contest problems
+          problemIdsToFetch = currentContest?.problems || [];
+        } else {
+          // Regular user practice mode: fetch all contest problems (we'll filter later)
+          problemIdsToFetch = Array.from(allContestProblemIds);
+        }
+      } else if (adminTestMode) {
+        // Admin test mode: fetch ALL problems from all contests
+        problemIdsToFetch = Array.from(allContestProblemIds);
+      } else {
+        // Admin normal mode: same as regular user
+        if (userContestId && isContestLive) {
+          problemIdsToFetch = currentContest?.problems || [];
+        } else {
+          problemIdsToFetch = Array.from(allContestProblemIds);
+        }
+      }
+      
+      // Fetch each problem individually
+      const problemPromises = problemIdsToFetch.map(async (problemId) => {
+        try {
+          const problem = await readProblem(problemId);
+          return problem;
+        } catch (error) {
+          console.error(`Failed to fetch problem ${problemId}:`, error);
+          return null;
+        }
+      });
+      
+      const fetchedProblems = await Promise.all(problemPromises);
+      const validProblems = fetchedProblems.filter(p => p != null);
+      
+      setProblems(validProblems);
+      
+    } catch (error) {
+      console.error("Error fetching filtered problems", error);
+    }
+  }
+  
+  fetchFilteredProblems();
+}, [contests, userContestId, isAdmin, adminTestMode]);
 
   const currentContest = contests.find((c) => c.id === userContestId);
   const allContestProblemIds = new Set<string>(contests.flatMap((c) => c.problems || []));
