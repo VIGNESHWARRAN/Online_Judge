@@ -22,97 +22,90 @@ function parseJavaCompileError(errorOutput) {
         return "Java Unreachable Code Error";
     } else if (/package .* does not exist/.test(firstLine)) {
         return "Java Package Not Found Error";
-    } else {
-        return "Unknown Error";
     }
+    return null;
 }
 
 function parseJavaRuntimeError(errorOutput) {
     // --- Standard Runtime Errors ---
-    if (/java.lang.NullPointerException/.test(errorOutput)) {
-        return "Java Null Pointer Exception";
-    } else if (/java.lang.ArrayIndexOutOfBoundsException/.test(errorOutput)) {
-        return "Java Array Index Out Of Bounds Exception";
-    } else if (/java.lang.StringIndexOutOfBoundsException/.test(errorOutput)) {
+    if (/java\.lang\.StringIndexOutOfBoundsException/.test(errorOutput)) {
         return "Java String Index Out Of Bounds Exception";
-    } else if (/java.lang.IndexOutOfBoundsException/.test(errorOutput)) {
+    } else if (/java\.lang\.ArrayIndexOutOfBoundsException/.test(errorOutput)) {
+        return "Java Array Index Out Of Bounds Exception";
+    } else if (/java\.lang\.IndexOutOfBoundsException/.test(errorOutput)) {
         return "Java Index Out Of Bounds Exception";
-    } else if (/java.lang.ArrayStoreException/.test(errorOutput)) {
+    } else if (/java\.lang\.NullPointerException/.test(errorOutput)) {
+        return "Java Null Pointer Exception";
+    } else if (/java\.lang\.ArrayStoreException/.test(errorOutput)) {
         return "Java Array Store Exception";
-    } else if (/java.lang.NegativeArraySizeException/.test(errorOutput)) {
+    } else if (/java\.lang\.NegativeArraySizeException/.test(errorOutput)) {
         return "Java Negative Array Size Exception";
-    } else if (/java.util.NoSuchElementException/.test(errorOutput)) {
-        return "Java No Such Element Exception";
-    } else if (/java.util.EmptyStackException/.test(errorOutput)) {
+    } else if (/java\.util\.EmptyStackException/.test(errorOutput)) {
         return "Java Empty Stack Exception";
-    } else if (/java.lang.ClassCastException/.test(errorOutput)) {
+    } else if (/java\.lang\.ClassCastException/.test(errorOutput)) {
         return "Java Class Cast Exception";
-    } else if (/java.lang.ArithmeticException/.test(errorOutput)) {
+    } else if (/java\.lang\.ArithmeticException/.test(errorOutput)) {
         return "Java Arithmetic Exception";
-    } else if (/java.lang.IllegalArgumentException/.test(errorOutput)) {
-        return "Java Illegal Argument Exception";
-    } else if (/java.lang.NumberFormatException/.test(errorOutput)) {
+    } else if (/java\.lang\.NumberFormatException/.test(errorOutput)) {
         return "Java Number Format Exception";
-    } else if (/java.lang.IllegalStateException/.test(errorOutput)) {
+    } else if (/java\.lang\.IllegalArgumentException/.test(errorOutput)) {
+        return "Java Illegal Argument Exception";
+    } else if (/java\.lang\.IllegalStateException/.test(errorOutput)) {
         return "Java Illegal State Exception";
-    } else if (/java.lang.UnsupportedOperationException/.test(errorOutput)) {
+    } else if (/java\.lang\.UnsupportedOperationException/.test(errorOutput)) {
         return "Java Unsupported Operation Exception";
-    } else if (/java.util.ConcurrentModificationException/.test(errorOutput)) {
+    } else if (/java\.util\.ConcurrentModificationException/.test(errorOutput)) {
         return "Java Concurrent Modification Exception";
     } 
     
     // --- Reflection & Loading Errors ---
-    else if (/java.lang.ClassNotFoundException/.test(errorOutput)) {
+    else if (/java\.lang\.ClassNotFoundException/.test(errorOutput)) {
         return "Java Class Not Found Exception";
-    } else if (/java.lang.NoClassDefFoundError/.test(errorOutput)) {
+    } else if (/java\.lang\.NoClassDefFoundError/.test(errorOutput)) {
         return "Java No Class Def Found Error";
-    } else if (/java.lang.NoSuchMethodException/.test(errorOutput)) {
+    } else if (/java\.lang\.NoSuchMethodException/.test(errorOutput)) {
         return "Java No Such Method Exception";
-    } else if (/java.lang.NoSuchFieldException/.test(errorOutput)) {
+    } else if (/java\.lang\.NoSuchFieldException/.test(errorOutput)) {
         return "Java No Such Field Exception";
-    } else if (/java.lang.InstantiationException/.test(errorOutput)) {
+    } else if (/java\.lang\.InstantiationException/.test(errorOutput)) {
         return "Java Instantiation Exception";
-    } else if (/java.lang.TypeNotPresentException/.test(errorOutput)) {
+    } else if (/java\.lang\.TypeNotPresentException/.test(errorOutput)) {
         return "Java Type Not Present Exception";
-    } else if (/java.lang.ReflectiveOperationException/.test(errorOutput)) {
+    } else if (/java\.lang\.ReflectiveOperationException/.test(errorOutput)) {
         return "Java Reflective Operation Exception";
     }
 
     // --- System & IO Errors ---
-    else if (/java.lang.StackOverflowError/.test(errorOutput)) {
+    else if (/java\.lang\.StackOverflowError/.test(errorOutput)) {
         return "Java Stack Overflow Error";
-    } else if (/java.lang.OutOfMemoryError/.test(errorOutput)) {
+    } else if (/java\.lang\.OutOfMemoryError/.test(errorOutput)) {
         return "Java Out Of Memory Error";
-    } else if (/java.io.FileNotFoundException/.test(errorOutput)) {
+    } else if (/java\.io\.FileNotFoundException/.test(errorOutput)) {
         return "Java File Not Found Exception";
-    } else if (/java.io.IOException/.test(errorOutput)) {
+    } else if (/java\.io\.IOException/.test(errorOutput)) {
         return "Java IO Exception";
-    } else if (/java.lang.InterruptedException/.test(errorOutput)) {
+    } else if (/java\.lang\.InterruptedException/.test(errorOutput)) {
         return "Java Interrupted Exception";
-    } else if (/java.util.concurrent.TimeoutException/.test(errorOutput)) {
+    } else if (/java\.util\.concurrent\.TimeoutException/.test(errorOutput)) {
         return "Java Timeout Exception";
-    } else if (/java.lang.SecurityException/.test(errorOutput)) {
+    } else if (/java\.lang\.SecurityException/.test(errorOutput)) {
         return "Java Security Exception";
-    } else if (/java.lang.AssertionError/.test(errorOutput)) {
+    } else if (/java\.lang\.AssertionError/.test(errorOutput)) {
         return "Java Assertion Error";
-    } 
-    
-    // --- Fallback ---
-    else {
-        return "Unknown Error";
     }
+    
+    return null;
 }
 
 function parseJavaLinkageError(errorOutput) {
-    if (/java.lang.NoClassDefFoundError/.test(errorOutput)) {
+    if (/java\.lang\.NoClassDefFoundError/.test(errorOutput)) {
         return "Java No Class Definition Found Error";
-    } else if (/java.lang.UnsatisfiedLinkError/.test(errorOutput)) {
+    } else if (/java\.lang\.UnsatisfiedLinkError/.test(errorOutput)) {
         return "Java Unsatisfied Link Error";
-    } else if (/java.lang.VerifyError/.test(errorOutput)) {
+    } else if (/java\.lang\.VerifyError/.test(errorOutput)) {
         return "Java Verify Error";
-    } else {
-        return "Unknown Error";
     }
+    return null;
 }
 
 
@@ -167,20 +160,20 @@ const executeJava = (filepath, input = '', timeoutMs = 5000) => {
             const memUsageKb = process.memoryUsage().rss / 1024;
 
             if (code !== 0) {
-                let parsedError;
+                let parsedError = null;
 
                 if (/error:/i.test(errorOutput)) {
-                    // Compile error
                     parsedError = parseJavaCompileError(errorOutput);
                 } else if (/Exception|Error/.test(errorOutput)) {
-                    // Runtime or linkage error
                     if (/NoClassDefFoundError|UnsatisfiedLinkError|VerifyError/.test(errorOutput)) {
                         parsedError = parseJavaLinkageError(errorOutput);
-                    } else {
+                    }
+                    if (!parsedError) {
                         parsedError = parseJavaRuntimeError(errorOutput);
                     }
-                } else {
-                    // Fallback for completely unrecognizable stderr
+                }
+
+                if (!parsedError) {
                     parsedError = "Unknown Error";
                 }
 
@@ -191,7 +184,6 @@ const executeJava = (filepath, input = '', timeoutMs = 5000) => {
                     memory: memUsageKb,
                 });
             } else {
-                // Success
                 resolve({
                     output: output.trim(),
                     time: execTime,

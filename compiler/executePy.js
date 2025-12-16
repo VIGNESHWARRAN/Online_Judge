@@ -1,5 +1,4 @@
 const { spawn } = require('child_process');
-const path = require('path');
 const { performance } = require('perf_hooks');
 
 const executePy = async (filepath, input = '', timeoutMs = 5000) => {
@@ -42,7 +41,8 @@ const executePy = async (filepath, input = '', timeoutMs = 5000) => {
       const timeTaken = +(endTime - startTime).toFixed(2);
 
       // Approximate memory usage (resident set size in KB)
-      const resourceUsage = process.resourceUsage();
+      // Note: resourceUsage is available in newer Node versions; fallback to memoryUsage if needed
+      const resourceUsage = process.resourceUsage ? process.resourceUsage() : process.memoryUsage();
       const memoryUsedKb = resourceUsage.rss / 1024;
 
       if (timedOut) return; // Already resolved on timeout
@@ -67,55 +67,107 @@ const executePy = async (filepath, input = '', timeoutMs = 5000) => {
     // Handle spawn errors (like process not starting)
     pyProcess.on('error', (err) => {
       clearTimeout(timeout);
-      const errMsg = `Failed to start Python process: ${err.message}`;
-      resolve({ error: errMsg });
+      resolve({ error: 'Unknown Error', detail: err.message });
     });
   });
 };
 
 function parsePythonError(stderrData) {
-  if (!stderrData) return 'Unknown Python Error';
+  if (!stderrData) return 'Unknown Error';
 
   const lines = stderrData.trim().split('\n');
-  const lastLine = lines[lines.length - 1].trim(); // Usually error type + message
+  const lastLine = lines[lines.length - 1].trim(); 
 
   // Extract just error type before colon, if available
   const errorType = lastLine.includes(':') ? lastLine.split(':')[0].trim() : lastLine;
 
-  // Map common Python errors to user-friendly messages
+  // --- SYNTAX & INDENTATION ---
   if (/SyntaxError/.test(errorType)) {
-    return 'Python Syntax Error: Invalid syntax detected';
+    return 'Python Syntax Error';
   } else if (/IndentationError/.test(errorType)) {
-    return 'Python Indentation Error: Incorrect indentation';
+    return 'Python Indentation Error';
+  } else if (/TabError/.test(errorType)) {
+    return 'Python Tab Error';
+  
+  // --- VARIABLES & LOOKUP ---
   } else if (/NameError/.test(errorType)) {
-    return 'Python Name Error: Undefined variable or function';
-  } else if (/TypeError/.test(errorType)) {
-    return 'Python Type Error: Operation on incompatible data types';
+    return 'Python Name Error';
+  } else if (/UnboundLocalError/.test(errorType)) {
+    return 'Python Unbound Local Error';
+  } else if (/LookupError/.test(errorType)) {
+    return 'Python Lookup Error';
   } else if (/IndexError/.test(errorType)) {
-    return 'Python Index Error: Index out of range';
+    return 'Python Index Error';
   } else if (/KeyError/.test(errorType)) {
-    return 'Python Key Error: Key not found in dictionary';
-  } else if (/ZeroDivisionError/.test(errorType)) {
-    return 'Python Zero Division Error: Division by zero';
+    return 'Python Key Error';
   } else if (/AttributeError/.test(errorType)) {
-    return 'Python Attribute Error: Invalid attribute or method call';
-  } else if (/ImportError/.test(errorType)) {
-    return 'Python Import Error: Failed to import module or object';
-  } else if (/ModuleNotFoundError/.test(errorType)) {
-    return 'Python Module Not Found: Requested module not found';
+    return 'Python Attribute Error';
+    
+  // --- TYPES & VALUES ---
+  } else if (/TypeError/.test(errorType)) {
+    return 'Python Type Error';
   } else if (/ValueError/.test(errorType)) {
-    return 'Python Value Error: Incorrect value';
-  } else if (/RuntimeError/.test(errorType)) {
-    return 'Python Runtime Error: Error during program execution';
-  } else if (/RecursionError/.test(errorType)) {
-    return 'Python Recursion Error: Maximum recursion depth exceeded';
+    return 'Python Value Error';
+  
+  // --- MATH & NUMBERS ---
+  } else if (/ZeroDivisionError/.test(errorType)) {
+    return 'Python Zero Division Error';
+  } else if (/ArithmeticError/.test(errorType)) {
+    return 'Python Arithmetic Error';
+  } else if (/OverflowError/.test(errorType)) {
+    return 'Python Overflow Error';
+  } else if (/FloatingPointError/.test(errorType)) {
+    return 'Python Floating Point Error';
+
+  // --- IMPORTS & FILES ---
+  } else if (/ModuleNotFoundError/.test(errorType)) {
+    return 'Python Module Not Found Error';
+  } else if (/ImportError/.test(errorType)) {
+    return 'Python Import Error';
   } else if (/FileNotFoundError/.test(errorType)) {
-    return 'Python File Not Found Error: Specified file does not exist';
-  } else if (/TimeoutExpired/.test(stderrData)) {
-    return 'Python Runtime Error: Execution timed out';
+    return 'Python File Not Found Error';
+  } else if (/PermissionError/.test(errorType)) {
+    return 'Python Permission Error';
+
+  // --- RUNTIME & MEMORY ---
+  } else if (/RuntimeError/.test(errorType)) {
+    return 'Python Runtime Error';
+  } else if (/RecursionError/.test(errorType)) {
+    return 'Python Recursion Error';
+  } else if (/MemoryError/.test(errorType)) {
+    return 'Python Memory Error';
+  } else if (/NotImplementedError/.test(errorType)) {
+    return 'Python Not Implemented Error';
+
+  // --- ENCODING ---
+  } else if (/UnicodeEncodeError/.test(errorType)) {
+    return 'Python Unicode Encode Error';
+  } else if (/UnicodeDecodeError/.test(errorType)) {
+    return 'Python Unicode Decode Error';
+  } else if (/UnicodeTranslateError/.test(errorType)) {
+    return 'Python Unicode Translate Error';
+  } else if (/UnicodeError/.test(errorType)) {
+    return 'Python Unicode Error';
+
+  // --- SYSTEM & CONTROL FLOW ---
+  } else if (/AssertionError/.test(errorType)) {
+    return 'Python Assertion Error';
+  } else if (/TimeoutError/.test(errorType)) {
+    return 'Python Timeout Error';
+  } else if (/StopIteration/.test(errorType)) {
+    return 'Python Stop Iteration Error';
+  } else if (/GeneratorExit/.test(errorType)) {
+    return 'Python Generator Exit Error';
+  } else if (/EOFError/.test(errorType)) {
+    return 'Python EOF Error';
+  } else if (/KeyboardInterrupt/.test(errorType)) {
+    return 'Python Keyboard Interrupt Error';
+  } else if (/SystemExit/.test(errorType)) {
+    return 'Python System Exit Error';
+
   } else {
-    // Fallback: return full last error line
-    return `Python Error: ${lastLine}`;
+    // Strict Fallback
+    return 'Unknown Error';
   }
 }
 
