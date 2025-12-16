@@ -28,9 +28,18 @@ export function useAuthHandler() {
   const signup = () =>
     loginWithRedirect({ authorizationParams: { screen_hint: "signup" } });
   const login = () => loginWithRedirect();
-  const logout = () =>
-    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
-
+const logout = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_BACKEND_IP}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include", 
+      });
+    } catch (err) {
+      console.error("Backend logout failed", err);
+    } finally {
+      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+    }
+  };
   useEffect(() => {
     const fetchUserFromDB = async () => {
        if (isLoading) return;

@@ -23,7 +23,7 @@ export default function ContestRegisterPage() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const userId = user.sub;
 
   useEffect(() => {
@@ -131,27 +131,47 @@ export default function ContestRegisterPage() {
   return (
     <RequireAuth allowedTypes={[]}>
       <div className="min-h-screen bg-gradient-to-br from-[#1e202f] to-[rgb(44,45,64)] p-4 md:p-8 text-white font-sans flex flex-col">
-        <div className="w-[95%] flex justify-start mb-4 ml-[2%]">
-          {userContests.length > 0 && (
-            <button
-              onClick={() => window.history.back()}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-2 rounded font-semibold transition"
-              aria-label="Back to Editor"
-            >
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
+        {/* --- 2. UPDATED TOP BAR (Justify Between) --- */}
+        <div className="w-[95%] flex justify-between items-center mb-4 ml-[2%]">
+          {/* Left Side: Go to Editor Button */}
+          <div>
+            {userContests.length > 0 && (
+              <button
+                onClick={() => window.history.back()}
+                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-2 rounded font-semibold transition"
+                aria-label="Back to Editor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              <span>Go to Editor</span>
-            </button>
-          )}
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>Go to Editor</span>
+              </button>
+            )}
+          </div>
+
+          {/* Right Side: Logout Button */}
+          <button
+            onClick={logout}
+            className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-semibold transition shadow-md"
+          >
+            <svg 
+              className="w-5 h-5" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span>Logout</span>
+          </button>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-8 w-full max-w-5xl mx-auto">
