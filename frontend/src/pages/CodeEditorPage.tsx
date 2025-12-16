@@ -283,7 +283,7 @@ useEffect(() => {
     filteredProblems = targetProblem ? [targetProblem] : [];
   }
 
-
+  console.log(filteredProblems);
   // Code/selection init
   useEffect(() => {
     if (filteredProblems.length === 0) {
