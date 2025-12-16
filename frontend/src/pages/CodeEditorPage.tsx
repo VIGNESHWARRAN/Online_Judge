@@ -250,7 +250,7 @@ useEffect(() => {
       setFiascode(false);
       return;
     }
-    if (!codeInitialized) {
+    else {
       const firstProblemCode = filteredProblems[0].codeBase || "";
       setSelectedIndex(0);
       setOGCode(firstProblemCode);
