@@ -147,32 +147,7 @@ useEffect(() => {
   
   fetchAllData();
 }, [userId]);
-  // useEffect(() => {
-  //   if (!userId) return;
-  //   async function fetchAllData() {
-  //     try {
-  //       const [userData, problemData, contestData] = await Promise.all([
-  //         readUser(userId),
-  //         readProblems(),
-  //         readContests(),
-  //       ]);
-  //       setUserContestId(userData?.contest || null);
 
-  //       const normalizedContests = (contestData || []).map((c) => ({
-  //         ...c,
-  //         problems: c.problems || [],
-  //         id: c.id || c._id,
-  //       }));
-
-  //       setContests(normalizedContests);
-  //       setProblems(problemData);
-  //       setCodeInitialized(false);
-  //     } catch (error) {
-  //       console.error("Error fetching data", error);
-  //     }
-  //   }
-  //   fetchAllData();
-  // }, [userId]);
   useEffect(() => {
   if (contests.length === 0) return;
   
@@ -258,30 +233,6 @@ useEffect(() => {
   // 👇 REPLACE your entire filtered problems section with this:
   let filteredProblems = problems;
 
-  // Regular users: contest/practice filtering (unchanged)
-  if (!isAdmin) {
-    if (userContestId && isContestLive) {
-      filteredProblems = problems.filter((p) => currentContest?.problems.includes(p.id));
-    } else {
-      filteredProblems = problems.filter((p) => !allContestProblemIds.has(p.id));
-    }
-  } else if (adminTestMode) {
-    // 👑 ADMIN TEST MODE: ALL problems (no filtering)
-    filteredProblems = problems;
-  } else {
-    // Admin normal mode: same as regular user
-    if (userContestId && isContestLive) {
-      filteredProblems = problems.filter((p) => currentContest?.problems.includes(p.id));
-    } else {
-      filteredProblems = problems.filter((p) => !allContestProblemIds.has(p.id));
-    }
-  }
-
-  // Specific test override (if you add per-problem testing later)
-  if (isAdmin && adminTestMode && testProblemId) {
-    const targetProblem = problems.find(p => p.id === testProblemId);
-    filteredProblems = targetProblem ? [targetProblem] : [];
-  }
 
   console.log(filteredProblems);
   // Code/selection init
@@ -316,6 +267,7 @@ useEffect(() => {
         setFiascode(true);
       }
     }
+    console.log(fiascode, OGcode);
   }, [filteredProblems, codeInitialized]);
  
 
