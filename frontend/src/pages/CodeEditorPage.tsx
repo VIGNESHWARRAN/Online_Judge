@@ -284,7 +284,6 @@ useEffect(() => {
   }
 
 
-
   // Code/selection init
   useEffect(() => {
     if (filteredProblems.length === 0) {
@@ -318,6 +317,7 @@ useEffect(() => {
       }
     }
   }, [filteredProblems, codeInitialized]);
+ 
 
 
   // Similarity / submit enabled logic
