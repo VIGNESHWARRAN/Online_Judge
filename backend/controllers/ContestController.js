@@ -179,7 +179,7 @@ export const removeProblemFromContest = async (req, res) => {
 // Validate contest password
 export const validateContestPassword = async (req, res) => {
   const { contestId, password } = req.body;
-
+  
   if (!contestId || !password) {
     return res.status(400).json({ error: "contestId and password are required" });
   }
