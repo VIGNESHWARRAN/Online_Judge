@@ -84,13 +84,10 @@ export default function CodeEditorPage() {
   useEffect(() => {
     if (auth?.type === "admin") {
       setIsAdmin(true);
-      console.log("👑 ADMIN DETECTED");
     } else {
       setIsAdmin(false);
-      console.log("👤 Regular User");
     }
   }, [auth?.type]);
-  console.log(isAdmin);
   const { timeLeft } = useContestSession();
 
   const formatTime = (): string => {
@@ -233,8 +230,6 @@ useEffect(() => {
   // 👇 REPLACE your entire filtered problems section with this:
   let filteredProblems = problems;
 
-
-  console.log(filteredProblems);
   // Code/selection init
   useEffect(() => {
     if (filteredProblems.length === 0) {
@@ -267,7 +262,6 @@ useEffect(() => {
         setFiascode(true);
       }
     }
-    console.log(fiascode, OGcode);
   }, [filteredProblems, codeInitialized]);
  
 
@@ -289,15 +283,12 @@ useEffect(() => {
   }, [code, selectedIndex, filteredProblems]);
   // 👇 REPLACE your current URL useEffect with this:
   useEffect(() => {
-    console.log("🔍 URL Check:", window.location.search);
     const urlParams = new URLSearchParams(window.location.search);
     const isAdminTest = urlParams.get("isAdminTest") === "true";
 
-    console.log("🔍 URL Parsed:", { isAdminTest, fullSearch: window.location.search });
 
     if (isAdmin && isAdminTest) {
       setAdminTestMode(true);
-      console.log("🧪 ADMIN TEST MODE ACTIVATED!");
     } else {
       setAdminTestMode(false);
       setTestProblemId(null);

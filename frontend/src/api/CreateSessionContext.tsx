@@ -14,10 +14,8 @@ export const ContestSessionProvider: React.FC<{ children: ReactNode }> = ({ chil
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    console.log("Timer effect triggered", sessionStartTime, sessionDuration);
 
     if (sessionStartTime === null || sessionDuration === null) {
-      console.log("Timer not started yet");
       setTimeLeft(null);
       return;
     }

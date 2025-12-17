@@ -10,7 +10,7 @@ router.post('/set-token', (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'none',
-    maxAge: 3600 * 1000, // 1 hour
+    maxAge: 2*3600 * 1000, // 1 hour
   });
 
   res.status(200).json({ message: 'Token set in cookie' });

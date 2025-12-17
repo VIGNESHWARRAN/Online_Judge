@@ -73,13 +73,6 @@ const logout = async () => {
   const url = new URL(window.location.href);
   const isAdminTestMode = url.searchParams.get("isAdminTest") === "true";
 
-  console.log("🔍 Auth:", {
-    type: existingUser.type,
-    path: location.pathname,
-    adminTest: isAdminTestMode,
-    url: window.location.href
-  });
-
   if (existingUser.type === "admin") {
     if (location.pathname === "/" && !isAdminTestMode) {
       navigate("/admin");
