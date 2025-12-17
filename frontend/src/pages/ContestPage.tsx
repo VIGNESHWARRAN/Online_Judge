@@ -97,7 +97,7 @@ export default function ContestRegisterPage() {
       setPasswordError("");
       setShowPasswordPrompt(true);
     } else {
-      window.history.back();
+      navigate(-1);
     }
   };
 
@@ -116,7 +116,7 @@ export default function ContestRegisterPage() {
         if (durationMinutes > 0) {
           startSession(durationMinutes);
         }
-        window.history.back();
+        navigate(-1);
       } else {
         setPasswordError("Invalid password. Please try again.");
       }
@@ -129,7 +129,7 @@ export default function ContestRegisterPage() {
   };
 
   return (
-    <RequireAuth allowedTypes={[]}>
+    <RequireAuth allowedTypes={["user", "admin"]}>
       <div className="min-h-screen bg-gradient-to-br from-[#1e202f] to-[rgb(44,45,64)] p-4 md:p-8 text-white font-sans flex flex-col">
         {/* --- 2. UPDATED TOP BAR (Justify Between) --- */}
         <div className="w-[95%] flex justify-between items-center mb-4 ml-[2%]">
@@ -137,7 +137,7 @@ export default function ContestRegisterPage() {
           <div>
             {userContests.length > 0 && (
               <button
-                onClick={() => window.history.back()}
+                onClick={() => navigate("/editor")}
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 px-3 md:px-4 py-2 rounded font-semibold transition"
                 aria-label="Back to Editor"
               >

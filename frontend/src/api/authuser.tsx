@@ -1,7 +1,8 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { useEffect, useState, createContext  } from "react";
+import { useEffect, useState, createContext, useRef  } from "react";
 import { useNavigate, useLocation} from "react-router-dom";
-
+import { updateUser } from "./users";
+import { unregisterUserFromContest } from "./contests";
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -20,7 +21,7 @@ export function useAuthHandler() {
     user,
     getAccessTokenSilently,
   } = useAuth0();
-
+  const Logincleaning = useRef(true);
   const [type, setType] = useState<"admin" | "user" | null>(null);
   const [dbUser, setDbUser] = useState(null);
   const location = useLocation();
@@ -30,6 +31,7 @@ export function useAuthHandler() {
   const login = () => loginWithRedirect();
 const logout = async () => {
     try {
+      Logincleaning.current = false;
       await fetch(`${import.meta.env.VITE_BACKEND_IP}/api/auth/logout`, {
         method: "POST",
         credentials: "include", 
@@ -68,6 +70,16 @@ const logout = async () => {
   const existingUser = await res.json();
   setType(existingUser.type);
   setDbUser(existingUser);
+if (Logincleaning.current && existingUser.contest) {
+  await unregisterUserFromContest(existingUser.contest, user.sub);
+  await updateUser(user.sub, { contest: null });
+  setDbUser({ ...existingUser, contest: null });
+
+  // 🔒 ensure it runs only once
+  Logincleaning.current = false;
+}
+
+  
 
   // FIXED: Use full browser URL
   const url = new URL(window.location.href);

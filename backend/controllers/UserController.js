@@ -36,17 +36,21 @@ export const getUserById = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const updated = await User.findOneAndUpdate(
-      { id: req.params.id },       
-      req.body,
-      { new: true }                 
+      { id: req.params.id },
+      { $set: req.body },     // ✅ SAFE partial update
+      { new: true }
     );
 
-    if (!updated) return res.status(404).json({ error: 'User not found' });
+    if (!updated) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
     res.json(updated);
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
+
 
 // DELETE USER BY CUSTOM ID
 export const deleteUser = async (req, res) => {
