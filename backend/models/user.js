@@ -5,7 +5,9 @@ const userSchema = new mongoose.Schema({
   name:     { type: String, required: true },
   email:    { type: String, required: true, unique: true },
   type: { type: String, required: true},
-  contest: {type: mongoose.Schema.Types.ObjectId, ref: 'contest', default: null }
+  contest: {type: mongoose.Schema.Types.ObjectId, ref: 'contest', default: null },
+  currentSessionId: { type: String, default: null }, // Stores the active UUID
+  lastActiveAt:     { type: Date, default: null }    // Stores time of last heartbeat
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

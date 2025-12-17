@@ -1,4 +1,5 @@
 import express from 'express';
+import authRouter from './auth.js';
 import * as contestController from '../controllers/ContestController.js';
 
 const router = express.Router();
