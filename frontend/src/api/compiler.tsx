@@ -10,7 +10,7 @@ export async function submitCode( lang, code, problemId, userId, contestId, user
     credentials: "include",
     body: JSON.stringify({ lang, code, problemId, userId, contestId, userName, input }),
   });
-  if (!res.ok) throw new Error("Failed to submit code");
+  if (!res.ok) throw new Error("Since I was using the instance on AWS to run and submit, I switched it off after the contest so please bare with my credits😅");
   const data = await res.json();
   return data;
 }
@@ -23,7 +23,7 @@ export async function runCode( lang, code, input = "" ) {
     credentials: "include",
     body: JSON.stringify({ lang, code, input }),
   });
-  if (!res.ok) throw new Error("Failed to execute code");
+  if (!res.ok) throw new Error("Since I was using the instance on AWS to run and submit, I switched it off after the contest so please bare with my credits😅");
   const data = await res.json();
   return data;
 }
