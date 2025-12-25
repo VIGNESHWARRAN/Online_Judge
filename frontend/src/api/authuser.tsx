@@ -21,7 +21,7 @@ export function useAuthHandler() {
     user,
     getAccessTokenSilently,
   } = useAuth0();
-  const Logincleaning = useRef(true);
+  const Logincleaning = useRef(false);
   const [type, setType] = useState<"admin" | "user" | null>(null);
   const [dbUser, setDbUser] = useState(null);
   const location = useLocation();
@@ -75,7 +75,6 @@ if (Logincleaning.current && existingUser.contest) {
   await updateUser(user.sub, { contest: null });
   setDbUser({ ...existingUser, contest: null });
 
-  // 🔒 ensure it runs only once
   Logincleaning.current = false;
 }
 

@@ -29,15 +29,8 @@ contestSchema.pre('save', async function (next) {
 });
 
 contestSchema.methods.comparePassword = function (candidatePassword) {
-  const SUFFIX = process.env.PEPPER;
 
-  if (!candidatePassword.endsWith(SUFFIX)) {
-    return Promise.resolve(false);
-  }
-
-  const realPassword = candidatePassword.slice(0, -SUFFIX.length);
-
-  return bcrypt.compare(realPassword, this.password);
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 export default mongoose.model('Contest', contestSchema);
